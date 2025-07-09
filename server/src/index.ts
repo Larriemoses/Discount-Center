@@ -1,41 +1,59 @@
+// src/index.ts
+
 import express, { Request, Response } from "express";
-import { connectDB } from "./config/db";
 import dotenv from "dotenv";
-import itemRoutes from "./routes/itemRoutes";
+// import cors from "cors"; // Uncomment this line if you plan to use CORS
+import path from "path";
+import { connectDB } from "./config/db"; // Your DB connection
+
+// Import your middleware for error handling and 404s
+import { notFound } from "./middleware/notFoundMiddleware"; // <--- NEW: Import notFound middleware
+import { errorHandler } from "./middleware/errorHandler"; // <--- NEW: Import errorHandler middleware
+
+// Import your routes
 import authRoutes from "./routes/authRoutes";
-import storeRoutes from "./routes/storeRoutes"; // <--- Add this import!
-import path from "path"; // <--- Add this for serving static files (images)
+import storeRoutes from "./routes/storeRoutes";
+import productRoutes from "./routes/productRoutes";
+// import itemRoutes from './routes/itemRoutes'; // Uncomment if you still need itemRoutes
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(express.json()); // For parsing application/json bodies
-app.use(express.urlencoded({ extended: true })); // For parsing URL-encoded bodies (important for form data)
+// Middleware for parsing request bodies
+app.use(express.json()); // For parsing application/json
+app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
+
+// Uncomment if you need CORS for frontend communication
+// app.use(cors());
 
 // Connect to MongoDB
 connectDB();
 
 // Serve static files from the 'uploads' directory
-// This allows access to uploaded images via http://localhost:5000/uploads/image.png
-app.use("/uploads", express.static(path.join(__dirname, "../uploads"))); // <--- Add this
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Basic root route
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello from the backend with MongoDB and Auth!");
 });
 
-// Use item routes for /api/items endpoint
-app.use("/api/items", itemRoutes);
-
-// Use authentication routes for /api/auth endpoint
+// Define your API routes
 app.use("/api/auth", authRoutes);
-
-// Use store routes for /api/stores endpoint // <--- Add this!
 app.use("/api/stores", storeRoutes);
+app.use("/api/products", productRoutes);
+// app.use('/api/items', itemRoutes); // Uncomment if you still need itemRoutes
+
+// IMPORTANT: Error Handling Middleware
+// 1. Not Found Middleware: Catches any requests that fall through all other routes
+app.use(notFound); // <--- Add this middleware here
+
+// 2. Centralized Error Handler: Processes errors caught by notFound or thrown by controllers
+app.use(errorHandler); // <--- Add this middleware here, after all routes and notFound
 
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
+  console.log(`JWT_SECRET from .env: ${process.env.JWT_SECRET}`); // Optional: for debugging
 });
