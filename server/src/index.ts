@@ -14,12 +14,20 @@ import { errorHandler } from "./middleware/errorHandler"; // <--- NEW: Import er
 import authRoutes from "./routes/authRoutes";
 import storeRoutes from "./routes/storeRoutes";
 import productRoutes from "./routes/productRoutes";
+import cors from "cors";
 // import itemRoutes from './routes/itemRoutes'; // Uncomment if you still need itemRoutes
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
+
+app.use(
+  cors({
+    origin: "http://localhost:5173", // <--- This must EXACTLY match your frontend URL
+    credentials: true, // This is important if you'll be using cookies, sessions, or sending auth tokens (like bearer tokens)
+  })
+);
 
 // Middleware for parsing request bodies
 app.use(express.json()); // For parsing application/json
