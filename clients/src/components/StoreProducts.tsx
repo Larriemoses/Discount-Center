@@ -1,8 +1,21 @@
 // src/components/StoreProducts.tsx
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom"; // Import useParams to get URL parameters
-import api from "../services/api"; // Your API service
+import { useParams, Link } from "react-router-dom";
+import api from "../services/api";
 import { AxiosError } from "axios";
+
+// Interface for a Store (matching your backend IStore model)
+// This is added here because StoreProducts needs full store details
+interface IStore {
+  _id: string;
+  name: string;
+  description: string;
+  slug: string;
+  logo?: string;
+  topDealHeadline?: string; // <--- ADDED: Headline for the store's main deal page
+  createdAt: string;
+  updatedAt: string;
+}
 
 // Interface for a Product (matching your backend IProduct model)
 interface IProduct {
@@ -13,12 +26,14 @@ interface IProduct {
   discountedPrice?: number;
   category?: string;
   images: string[];
+  // The 'store' property here is what's returned by the product API,
+  // it might be a partial object, hence why we also fetch full storeDetails
   store: {
     _id: string;
     name: string;
     logo?: string;
     slug: string;
-  }; // Populated store object
+  };
   stock: number;
   isActive: boolean;
   discountCode: string;
@@ -31,14 +46,14 @@ interface IProduct {
 }
 
 const StoreProducts: React.FC = () => {
-  const { storeId } = useParams<{ storeId: string }>(); // Get storeId from the URL
+  const { storeId } = useParams<{ storeId: string }>();
   const [products, setProducts] = useState<IProduct[]>([]);
+  const [storeDetails, setStoreDetails] = useState<IStore | null>(null); // To hold full store details
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [storeName, setStoreName] = useState<string>(""); // To display store name
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       if (!storeId) {
         setError("Store ID is missing from the URL.");
         setLoading(false);
@@ -48,30 +63,29 @@ const StoreProducts: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        // Fetch products for the specific storeId
-        const response = await api.get(`/products/stores/${storeId}/products`);
-        setProducts(response.data);
 
-        // Assuming products[0] will have the store data if the array is not empty
-        // Or you could make a separate call to /stores/:storeId if needed.
-        if (response.data.length > 0) {
-          setStoreName(response.data[0].store.name);
+        // First, fetch the full store details to get logo and topDealHeadline
+        const storeResponse = await api.get(`/stores/${storeId}`);
+        setStoreDetails(storeResponse.data);
+
+        // Then, fetch products for the specific storeId
+        const productsResponse = await api.get(
+          `/products/stores/${storeId}/products`
+        );
+        if (Array.isArray(productsResponse.data)) {
+          setProducts(productsResponse.data);
         } else {
-          // If no products, still try to get the store name for context
-          try {
-            const storeResponse = await api.get(`/stores/${storeId}`);
-            setStoreName(storeResponse.data.name);
-          } catch (storeErr) {
-            console.error(
-              "Could not fetch store details for empty product list:",
-              storeErr
-            );
-            setStoreName("Unknown Store");
-          }
+          console.error(
+            "Backend /products endpoint did not return an array:",
+            productsResponse.data
+          );
+          setError(
+            "Failed to load products: Unexpected data format from server."
+          );
         }
       } catch (err) {
         const axiosError = err as AxiosError;
-        console.error("Error fetching products:", axiosError);
+        console.error("Error fetching data for store products:", axiosError);
         if (axiosError.response) {
           const errorMessage =
             (axiosError.response.data as any)?.message ||
@@ -92,13 +106,13 @@ const StoreProducts: React.FC = () => {
       }
     };
 
-    fetchProducts();
-  }, [storeId]); // Re-run effect if storeId changes in the URL
+    fetchData();
+  }, [storeId]);
 
   if (loading) {
     return (
       <p className="text-center text-lg mt-8">
-        Loading deals for {storeName || "store"}...
+        Loading deals for {storeDetails?.name || "store"}...
       </p>
     );
   }
@@ -108,27 +122,69 @@ const StoreProducts: React.FC = () => {
       <div className="text-center text-red-500 text-lg mt-8">
         <p>{error}</p>
         <Link to="/" className="text-purple-600 hover:underline">
-          Go back to Stores
+          Go back to All Stores
         </Link>
       </div>
     );
+  }
+
+  // If storeDetails is null but not loading and no error, something went wrong
+  if (!storeDetails) {
+    return <p className="text-center text-lg mt-8">Store details not found.</p>;
   }
 
   return (
     <div className="p-4">
       <Link
         to="/"
-        className="text-purple-600 hover:underline mb-4 inline-block"
+        className="text-purple-600 hover:underline mb-2 inline-block"
       >
         &larr; Back to All Stores
       </Link>
-      <h2 className="text-3xl font-bold text-center mb-6">
-        Deals from {storeName}
-      </h2>
+
+      {/* --- Main Headline Section for the Store --- */}
+      {storeDetails.topDealHeadline && (
+        <div className="  p-6 text-center mb-2">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight mb-2">
+            {storeDetails.topDealHeadline}
+          </h2>
+          <p className="text-gray-600 text-lg">
+            Top {storeDetails.name} Coupon Codes for{" "}
+            {new Date().toLocaleString("default", {
+              month: "long",
+              year: "numeric",
+            })}
+          </p>
+          <p className="text-gray-600 text-sm mt-1">
+            This page contains the best {storeDetails.name} discount codes,
+            curated by Discount Center
+          </p>
+
+          {/* Store Logo within the Headline Section as seen in mockup */}
+          {storeDetails.logo && storeDetails.logo !== "no-photo.jpg" ? (
+            <img
+              src={`${import.meta.env.VITE_BACKEND_URL?.replace("/api", "")}${
+                storeDetails.logo
+              }`}
+              alt={`${storeDetails.name} logo`}
+              className="w-24 h-24 object-contain mx-auto mt-4 rounded-md border border-gray-200 p-2"
+            />
+          ) : (
+            <div className="w-24 h-24 bg-gray-200 flex items-center justify-center mx-auto mt-4 rounded-md text-gray-500 text-sm border border-dashed border-gray-400">
+              No Logo
+            </div>
+          )}
+          <hr className="my-4 border-gray-300 " />
+        </div>
+      )}
+
+      <h3 className="text-3xl font-normal text-center mb-6">
+        All Deals from {storeDetails.name}
+      </h3>
 
       {products.length === 0 ? (
         <p className="text-center text-gray-600 mt-8">
-          No deals found for {storeName} yet. Check back later!
+          No deals found for {storeDetails.name} yet. Check back later!
         </p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -137,27 +193,26 @@ const StoreProducts: React.FC = () => {
               key={product._id}
               className="bg-white rounded-lg shadow-md p-6 transform hover:scale-105 transition-transform duration-200 ease-in-out flex flex-col"
             >
-              {/* Product Logo / Image */}
-              {product.images && product.images.length > 0 ? (
+              {/* Small Store Logo on Product Card (using storeDetails.logo as per image) */}
+              {storeDetails.logo && storeDetails.logo !== "no-photo.jpg" ? (
                 <img
                   src={`${import.meta.env.VITE_BACKEND_URL?.replace(
                     "/api",
                     ""
-                  )}${product.images[0]}`}
-                  alt={product.name}
-                  className="w-full h-40 object-contain mb-4 rounded-md border border-gray-200 p-2"
+                  )}${storeDetails.logo}`}
+                  alt={`${storeDetails.name} logo`}
+                  className="w-16 h-16 object-contain mb-2 rounded-md border border-gray-200 p-1"
                 />
               ) : (
-                <div className="w-full h-40 bg-gray-200 flex items-center justify-center mb-4 rounded-md text-gray-500 text-sm border border-dashed border-gray-400">
-                  No Product Image
+                <div className="w-16 h-16 bg-gray-200 flex items-center justify-center mb-2 rounded-md text-gray-500 text-xs border border-dashed border-gray-400">
+                  No Logo
                 </div>
               )}
 
-              {/* Product Title */}
-              <h3 className="text-xl font-semibold mb-2 text-gray-900 line-clamp-2">
+              {/* Product Title / Deal Description */}
+              <h4 className="text-xl font-semibold mb-2 text-gray-900 line-clamp-2">
                 {product.name}
-              </h3>
-              {/* Product Description */}
+              </h4>
               <p className="text-gray-700 text-sm mb-4 line-clamp-3 flex-grow">
                 {product.description}
               </p>

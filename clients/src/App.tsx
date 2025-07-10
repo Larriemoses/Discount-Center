@@ -1,38 +1,63 @@
-// src/App.tsx
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"; // Import Router components
-import StoreList from "./components/StoreList"; // Your existing component
-import StoreProducts from "./components/StoreProducts"; // We'll create this next!
+// client/src/App.tsx
 
-function App() {
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+// Public components
+import StoreList from "./components/StoreList";
+import StoreProducts from "./components/StoreProducts";
+
+// Admin Auth components
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import PrivateRoute from "./components/PrivateRoute";
+
+// Admin Management components
+import AdminProductListPage from "./pages/AdminProductListPage";
+import AdminStoreListPage from "./pages/AdminStoreListPage"; // Assuming this is correct path
+import AdminProductFormPage from "./pages/AdminProductFormPage";
+import AdminStoreFormPage from "./pages/AdminStoreFormPage"; // <--- Import the new Store Form Page
+
+const App: React.FC = () => {
   return (
     <Router>
-      {" "}
-      {/* Wrap your entire app with BrowserRouter */}
-      <div className="min-h-screen flex flex-col bg-gray-100 text-gray-800">
-        <header className="bg-purple-700 text-white p-4 shadow-md">
-          <h1 className="text-3xl font-bold text-center">Discount Center</h1>
-          {/* You can add a navigation bar here later, potentially with a Link back to home */}
-        </header>
+      <div className="App">
+        {/* Your Navbar/Header might go here */}
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<StoreList />} />
+          <Route path="/stores/:storeId" element={<StoreProducts />} />
 
-        <main className="flex-grow container mx-auto p-4">
-          <Routes>
-            {" "}
-            {/* Define your routes here */}
-            <Route path="/" element={<StoreList />} />{" "}
-            {/* Route for displaying all stores */}
-            <Route path="/stores/:storeId" element={<StoreProducts />} />{" "}
-            {/* Route for a single store's products */}
-            {/* Add more routes here as your app grows */}
-          </Routes>
-        </main>
+          {/* Admin Authentication Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
 
-        <footer className="bg-gray-800 text-white p-4 text-center">
-          <p>&copy; 2025 Discount Center. All rights reserved.</p>
-        </footer>
+          {/* Protected Admin Routes */}
+          <Route path="/admin" element={<PrivateRoute />}>
+            <Route path="dashboard" element={<AdminDashboard />} />
+            {/* Admin Product Routes */}
+            <Route path="products" element={<AdminProductListPage />} />
+            <Route path="products/new" element={<AdminProductFormPage />} />
+            <Route
+              path="products/edit/:id"
+              element={<AdminProductFormPage />}
+            />
+            {/* Admin Store Routes */}
+            <Route path="stores" element={<AdminStoreListPage />} />
+            <Route path="stores/new" element={<AdminStoreFormPage />} />{" "}
+            {/* <--- Use the new component for adding */}
+            <Route
+              path="stores/edit/:id"
+              element={<AdminStoreFormPage />}
+            />{" "}
+            {/* <--- Use the new component for editing */}
+          </Route>
+
+          {/* Fallback route for 404 */}
+          <Route path="*" element={<div>404 Not Found</div>} />
+        </Routes>
       </div>
     </Router>
   );
-}
+};
 
 export default App;

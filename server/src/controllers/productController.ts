@@ -1,29 +1,91 @@
-// src/controllers/productController.ts
+// server/src/controllers/productController.ts
 
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express"; // NextFunction added for full signature
 import asyncHandler from "express-async-handler";
 import Product, { IProduct } from "../models/Product";
 import Store from "../models/Store"; // To check if store exists
 import path from "path";
 import fs from "fs";
+// Assuming you have AdminUser if needed for user context (from authMiddleware)
+// import { IAdminUser } from "../models/AdminUser";
 
 // Extend Request type for Multer's files and auth middleware's user
 interface CustomRequest extends Request {
   files?:
     | { [fieldname: string]: Express.Multer.File[] }
     | Express.Multer.File[]; // Multer array files type
-  user?: any; // From protect middleware
+  user?: any; // From protect middleware (IAdminUser or similar type from authMiddleware)
 }
 
 // Helper function to delete files from the 'uploads' directory
 const deleteFiles = (filePaths: string[]) => {
   filePaths.forEach((filePath) => {
-    const fullPath = path.join(__dirname, "..", filePath);
+    // Ensure the path is correct relative to the server root 'uploads' directory
+    const fullPath = path.join(__dirname, "..", "..", filePath); // Adjust path to reach /uploads from /src/controllers
     if (fs.existsSync(fullPath)) {
-      fs.unlinkSync(fullPath);
+      try {
+        fs.unlinkSync(fullPath);
+        console.log(`Deleted file: ${fullPath}`);
+      } catch (err) {
+        console.error(`Error deleting file ${fullPath}:`, err);
+      }
     }
   });
 };
+
+/**
+ * @desc    Get all products (for Admin List Page)
+ * @route   GET /api/products
+ * @access  Private (Admin only)
+ */
+export const getProducts = asyncHandler(async (req: Request, res: Response) => {
+  console.log("getProducts controller function invoked."); // <--- ADD THIS LOG
+
+  // Use populate('store', 'name logo') to get store name and logo for display
+  const products = await Product.find({}).populate("store", "name logo");
+
+  res.status(200).json({
+    success: true,
+    count: products.length,
+    data: products,
+  });
+});
+
+// @desc    Get all products for a specific store (Public or Admin filtered)
+// @route   GET /api/products/stores/:storeId/products
+// @access  Public
+export const getProductsByStore = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { storeId } = req.params;
+
+    const storeExists = await Store.findById(storeId);
+    if (!storeExists) {
+      res.status(404);
+      throw new Error("Store not found.");
+    }
+
+    // Populate the 'store' field to get store details like logo, name, etc.
+    const products = await Product.find({ store: storeId }).populate("store");
+
+    res.status(200).json(products); // Return empty array if no products found for store
+  }
+);
+
+// @desc    Get a single product by its ID
+// @route   GET /api/products/:id
+// @access  Public
+export const getProductById = asyncHandler(
+  async (req: Request, res: Response) => {
+    const product = await Product.findById(req.params.id).populate("store");
+
+    if (product) {
+      res.status(200).json(product);
+    } else {
+      res.status(404);
+      throw new Error("Product not found");
+    }
+  }
+);
 
 // @desc    Create a new product for a store
 // @route   POST /api/products/stores/:storeId/products
@@ -56,7 +118,7 @@ export const createProduct = asyncHandler(
       !discountCode ||
       !shopNowUrl
     ) {
-      if (req.files) {
+      if (req.files && Array.isArray(req.files) && req.files.length > 0) {
         const uploadedFilePaths = (req.files as Express.Multer.File[]).map(
           (file) => `/uploads/${file.filename}`
         );
@@ -71,7 +133,7 @@ export const createProduct = asyncHandler(
     // Check if the store exists
     const storeExists = await Store.findById(storeId);
     if (!storeExists) {
-      if (req.files) {
+      if (req.files && Array.isArray(req.files) && req.files.length > 0) {
         const uploadedFilePaths = (req.files as Express.Multer.File[]).map(
           (file) => `/uploads/${file.filename}`
         );
@@ -102,55 +164,13 @@ export const createProduct = asyncHandler(
       // NEW FIELDS
       discountCode,
       shopNowUrl,
-      successRate: successRate !== undefined ? successRate : 0, // Use provided or default
-      totalUses: totalUses !== undefined ? totalUses : 0, // Use provided or default
-      todayUses: todayUses !== undefined ? todayUses : 0, // Use provided or default
+      successRate: successRate !== undefined ? successRate : 0,
+      totalUses: totalUses !== undefined ? totalUses : 0,
+      todayUses: todayUses !== undefined ? todayUses : 0,
     });
 
     const createdProduct = await newProduct.save();
     res.status(201).json(createdProduct);
-  }
-);
-
-// @desc    Get all products for a specific store
-// @route   GET /api/products/stores/:storeId/products
-// @access  Public
-export const getProductsByStore = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { storeId } = req.params;
-
-    // Populate the 'store' field to get store details like logo, name, etc.
-    // This is crucial for your UI to display the store logo and name next to the product
-    const products = await Product.find({ store: storeId }).populate("store");
-
-    if (!products || products.length === 0) {
-      // Optionally check if store exists before returning empty
-      const storeExists = await Store.findById(storeId);
-      if (!storeExists) {
-        res.status(404);
-        throw new Error("Store not found.");
-      }
-      res.status(200).json([]); // Return empty array if no products found but store exists
-    } else {
-      res.status(200).json(products);
-    }
-  }
-);
-
-// @desc    Get a single product by its ID
-// @route   GET /api/products/:id
-// @access  Public
-export const getProductById = asyncHandler(
-  async (req: Request, res: Response) => {
-    // Populate the 'store' field when getting a single product too
-    const product = await Product.findById(req.params.id).populate("store");
-
-    if (product) {
-      res.status(200).json(product);
-    } else {
-      res.status(404);
-      throw new Error("Product not found");
-    }
   }
 );
 
@@ -179,7 +199,7 @@ export const updateProduct = asyncHandler(
     let product = await Product.findById(productId);
 
     if (!product) {
-      if (req.files) {
+      if (req.files && Array.isArray(req.files) && req.files.length > 0) {
         // Delete newly uploaded files if product doesn't exist
         const uploadedFilePaths = (req.files as Express.Multer.File[]).map(
           (file) => `/uploads/${file.filename}`
@@ -216,7 +236,7 @@ export const updateProduct = asyncHandler(
       deleteFiles(product.images); // Delete old images from file system
       product.images = req.files.map((file) => `/uploads/${file.filename}`); // Set new images
     } else if (req.body.clearImages === "true") {
-      // Frontend can signal to clear all images
+      // Frontend can signal to clear all images (e.g., if user removes them)
       deleteFiles(product.images);
       product.images = [];
     }
@@ -243,7 +263,7 @@ export const deleteProduct = asyncHandler(
     // Delete associated image files from the file system
     deleteFiles(product.images);
 
-    await Product.deleteOne({ _id: productId });
+    await Product.deleteOne({ _id: productId }); // Use deleteOne on the model
     res.status(200).json({ message: "Product removed successfully" });
   }
 );

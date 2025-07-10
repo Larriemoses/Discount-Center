@@ -7,6 +7,7 @@ export interface IStore extends Document {
   description: string;
   slug: string; // Made required by default as it will always be generated
   logo?: string; // Path to the uploaded logo image
+  topDealHeadline?: string; // <--- ADD THIS LINE: Optional headline for top deals
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,6 +37,12 @@ const StoreSchema: Schema = new Schema(
     logo: {
       type: String,
       default: "no-photo.jpg", // Default image if no logo is uploaded
+    },
+    topDealHeadline: {
+      // <--- ADD THIS FIELD DEFINITION
+      type: String,
+      trim: true,
+      maxlength: [150, "Top deal headline can not be more than 150 characters"], // Optional max length
     },
   },
   {

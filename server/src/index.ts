@@ -2,7 +2,6 @@
 
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
-// import cors from "cors"; // Uncomment this line if you plan to use CORS
 import path from "path";
 import { connectDB } from "./config/db"; // Your DB connection
 
@@ -15,6 +14,7 @@ import authRoutes from "./routes/authRoutes";
 import storeRoutes from "./routes/storeRoutes";
 import productRoutes from "./routes/productRoutes";
 import cors from "cors";
+
 // import itemRoutes from './routes/itemRoutes'; // Uncomment if you still need itemRoutes
 
 dotenv.config();

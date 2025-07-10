@@ -1,6 +1,6 @@
 // src/components/StoreList.tsx
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom"; // Import Link for navigation
+import { Link } from "react-router-dom";
 import api from "../services/api";
 import { AxiosError } from "axios";
 
@@ -10,6 +10,7 @@ interface IStore {
   description: string;
   slug: string;
   logo?: string;
+  topDealHeadline?: string; // <--- ADDED: Headline for the store's main deal page
   createdAt: string;
   updatedAt: string;
 }
@@ -25,7 +26,17 @@ const StoreList: React.FC = () => {
         setLoading(true);
         setError(null);
         const response = await api.get("/stores");
-        setStores(response.data);
+        if (Array.isArray(response.data)) {
+          setStores(response.data);
+        } else {
+          console.error(
+            "Backend /stores endpoint did not return an array:",
+            response.data
+          );
+          setError(
+            "Failed to load stores: Unexpected data format from server."
+          );
+        }
       } catch (err) {
         const axiosError = err as AxiosError;
         console.error("Error fetching stores:", axiosError);
@@ -94,7 +105,6 @@ const StoreList: React.FC = () => {
               <p className="text-gray-700 text-sm mb-4 flex-grow">
                 {store.description}
               </p>
-              {/* Use Link to navigate to the store's products page */}
               <Link
                 to={`/stores/${store._id}`}
                 className="mt-auto block w-full"

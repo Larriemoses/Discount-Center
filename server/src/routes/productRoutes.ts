@@ -1,7 +1,8 @@
-// src/routes/productRoutes.ts
+// server/src/routes/productRoutes.ts
 
 import express from "express";
 import {
+  getProducts, // <--- Make sure this is imported
   createProduct,
   getProductsByStore,
   getProductById,
@@ -13,8 +14,18 @@ import upload from "../middleware/uploadMiddleware"; // For image uploads
 
 const router = express.Router();
 
-// Public routes for getting products (might become filtered later)
-router.get("/:id", getProductById); // Get a single product by its own ID
+console.log("Product routes file loaded."); // <--- ADD THIS LOG
+
+// Route to get ALL products (typically for admin overview)
+// This is protected as only admins should fetch all products this way
+// Add a log directly within the route handler before calling getProducts
+router.route("/").get(protect, authorize(["admin"]), (req, res, next) => {
+  console.log("GET /api/products route handler entered."); // <--- ADD THIS LOG
+  getProducts(req, res, next); // Ensure getProducts is called with req, res, next
+});
+
+// Public route for getting a single product by its own ID
+router.get("/:id", getProductById);
 
 // Routes for products associated with a specific store
 router

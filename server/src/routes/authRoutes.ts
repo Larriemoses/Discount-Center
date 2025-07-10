@@ -1,34 +1,33 @@
-import express, { Request, Response, NextFunction } from "express";
+// server/src/routes/authRoutes.ts
+import express, { Request, Response, NextFunction } from "express"; // Import Request, Response, NextFunction
 import jwt from "jsonwebtoken";
 import AdminUser, { IAdminUser } from "../models/AdminUser";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import { protect, authorize } from "../middleware/authMiddleware"; // Import protect and authorize
 
 dotenv.config();
 
-// Initialize the Express router
-const router = express.Router(); // <--- THIS LINE WAS MISSING OR OVERLOOKED IN THE PREVIOUS PASTE
+const router = express.Router();
 
-// Get JWT Secret from environment variables
-// Ensure JWT_SECRET is treated as a string, as process.env values always are.
 const JWT_SECRET = process.env.JWT_SECRET as string;
-// Fallback for development, though it should ideally always come from .env
 if (!JWT_SECRET) {
   console.error("FATAL ERROR: JWT_SECRET is not defined in .env");
-  process.exit(1); // Exit if secret is not set, as it's critical
+  process.exit(1);
 }
 
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
 
-// Utility function to generate a JWT
 const generateToken = (id: mongoose.Types.ObjectId) => {
-  // jwt.sign expects Secret as the second argument, which can be a string.
-  // Explicitly ensuring JWT_SECRET is treated as `jwt.Secret` if `as string` isn't enough for TS.
-  // In most cases, `as string` is sufficient, but if not, this is the next step.
   return jwt.sign({ id }, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN,
-  } as jwt.SignOptions); // <--- Explicitly cast options to jwt.SignOptions
+  } as jwt.SignOptions);
 };
+
+// Extend the Request interface to include the 'user' property for middleware usage
+interface CustomRequest extends Request {
+  user?: IAdminUser; // Aligns with your authMiddleware.ts
+}
 
 // @route   POST /api/auth/admin/register
 // @desc    Register a new admin user (ONLY FOR INITIAL SETUP - SECURE LATER!)
@@ -39,7 +38,6 @@ router.post(
     const { username, password } = req.body;
 
     try {
-      // Check if an admin already exists (optional, depends on your strategy for multi-admin)
       const existingUser = await AdminUser.findOne({ username });
       if (existingUser) {
         return res
@@ -56,6 +54,7 @@ router.post(
         message: "Admin registered successfully",
         token,
         username: newUser.username,
+        role: newUser.role,
       });
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });
@@ -72,25 +71,52 @@ router.post(
     const { username, password } = req.body;
 
     try {
-      // 1. Check if user exists
-      const user = await AdminUser.findOne({ username });
+      const user = await AdminUser.findOne({ username }).select("+password");
       if (!user) {
         return res.status(400).json({ message: "Invalid credentials" });
       }
 
-      // 2. Check password
       const isMatch = await user.comparePassword(password);
       if (!isMatch) {
         return res.status(400).json({ message: "Invalid credentials" });
       }
 
-      // 3. Generate JWT
       const token = generateToken(user._id as mongoose.Types.ObjectId);
 
       res.status(200).json({
         message: "Login successful",
         token,
         username: user.username,
+        role: user.role,
+      });
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  }
+);
+
+// @route   GET /api/auth/admin/me
+// @desc    Get current logged-in admin user
+// @access  Private (Admin only)
+router.get(
+  "/admin/me",
+  protect,
+  authorize(["admin"]), // Ensure the role matches your AdminUser model's enum
+  async (req: CustomRequest, res: Response) => {
+    // <--- Changed from req: Request to req: CustomRequest
+    try {
+      // req.user is populated by the 'protect' middleware
+      if (!req.user) {
+        // <--- Using req.user here
+        return res.status(404).json({ message: "Admin user not found" });
+      }
+      res.status(200).json({
+        message: "Admin details fetched successfully",
+        data: {
+          _id: req.user._id, // <--- Using req.user here
+          username: req.user.username, // <--- Using req.user here
+          role: req.user.role, // <--- Using req.user here
+        },
       });
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });
