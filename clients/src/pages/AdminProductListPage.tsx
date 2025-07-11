@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import type { IProduct } from "../../../server/src/models/Product"; // <--- ADD 'type' keyword
+import type { IProduct } from "../../../server/src/models/Product";
 import type { IStore } from "../../../server/src/models/Store";
 
 const AdminProductListPage: React.FC = () => {
@@ -82,9 +82,7 @@ const AdminProductListPage: React.FC = () => {
 
   // General products routes (for admin list, for example)
   router.route('/')
-    .get(getProducts) // Get ALL products (you already have this function in productController)
-    // You might want to make this protected for admin GET ALL
-    // .get(protect, authorize(['admin']), getProducts)
+    .get(protect, authorize(['admin']), getProducts) // <--- Make this protected for admin GET ALL
     // The POST /api/products route from my previous example is handled by:
     // router.post("/stores/:storeId/products", protect, authorize(["admin"]), upload.array("images", 5), createProduct);
 
@@ -151,12 +149,22 @@ const AdminProductListPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-800">
             Product Management
           </h1>
-          <Link
-            to="/admin/products/new" // Route to add new product
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
-          >
-            Add New Product
-          </Link>
+          <div className="flex space-x-4">
+            {" "}
+            {/* <--- Added a div to group buttons */}
+            <Link
+              to="/admin/dashboard" // <--- NEW: Link to Admin Dashboard
+              className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+            >
+              Back to Dashboard
+            </Link>
+            <Link
+              to="/admin/products/new" // Route to add new product
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+            >
+              Add New Product
+            </Link>
+          </div>
         </div>
 
         {products.length === 0 ? (

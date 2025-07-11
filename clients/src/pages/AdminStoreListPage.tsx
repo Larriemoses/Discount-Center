@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import type { IStore } from "../../../server/src/models/Store"; // Corrected type-only import
+import type { IStore } from "../../../server/src/models/Store";
 
 const AdminStoreListPage: React.FC = () => {
   const [stores, setStores] = useState<IStore[]>([]);
@@ -21,15 +21,12 @@ const AdminStoreListPage: React.FC = () => {
     setLoading(true);
     setError("");
     try {
-      // Assuming your backend has a GET /api/stores route to fetch all stores
       const response = await axios.get("http://localhost:5000/api/stores", {
         headers: {
           Authorization: `Bearer ${adminToken}`,
         },
       });
-      // Assuming your API returns an array of store objects directly or in a 'data' field
-      // Adjust `response.data` or `response.data.data` based on your actual API response structure
-      setStores(response.data.data || response.data); // Adjust as needed
+      setStores(response.data.data || response.data);
     } catch (err: any) {
       console.error("Failed to fetch stores:", err);
       setError(
@@ -79,12 +76,20 @@ const AdminStoreListPage: React.FC = () => {
       <div className="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Store Management</h1>
-          <Link
-            to="/admin/stores/new" // Route to add new store (will create this next)
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
-          >
-            Add New Store
-          </Link>
+          <div className="flex space-x-4">
+            <Link
+              to="/admin/dashboard"
+              className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+            >
+              Back to Dashboard
+            </Link>
+            <Link
+              to="/admin/stores/new"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+            >
+              Add New Store
+            </Link>
+          </div>
         </div>
 
         {stores.length === 0 ? (
@@ -112,7 +117,7 @@ const AdminStoreListPage: React.FC = () => {
                     <td className="py-3 px-6 text-left">
                       {store.logo && store.logo !== "no-photo.jpg" ? (
                         <img
-                          src={`http://localhost:5000/uploads/${store.logo}`} // Assumes logos are in /uploads
+                          src={`http://localhost:5000${store.logo}`} // <--- CORRECTED LINE HERE
                           alt={store.name}
                           className="w-16 h-16 object-cover rounded"
                         />

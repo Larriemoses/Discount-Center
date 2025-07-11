@@ -1,63 +1,88 @@
 // client/src/App.tsx
 
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
-// Public components
-import StoreList from "./components/StoreList";
-import StoreProducts from "./components/StoreProducts";
-
-// Admin Auth components
-import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
-import PrivateRoute from "./components/PrivateRoute";
-
-// Admin Management components
+import { Routes, Route, useLocation } from "react-router-dom";
+import HomePage from "./pages/HomePage";
+import AdminLoginPage from "./pages/AdminLogin";
+import AdminDashboardPage from "./pages/AdminDashboard";
+import AdminStoreListPage from "./pages/AdminStoreListPage";
+import AdminStoreFormPage from "./pages/AdminStoreFormPage";
 import AdminProductListPage from "./pages/AdminProductListPage";
-import AdminStoreListPage from "./pages/AdminStoreListPage"; // Assuming this is correct path
 import AdminProductFormPage from "./pages/AdminProductFormPage";
-import AdminStoreFormPage from "./pages/AdminStoreFormPage"; // <--- Import the new Store Form Page
+import Navbar from "./components/Navbar";
+import StoreDetailsPage from "./pages/StoreDetailsPage";
 
-const App: React.FC = () => {
+function App() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith("/admin");
+  // const isHomePage = location.pathname === "/"; // No longer needed here
+
   return (
-    <Router>
-      <div className="App">
-        {/* Your Navbar/Header might go here */}
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<StoreList />} />
-          <Route path="/stores/:storeId" element={<StoreProducts />} />
+    <>
+      {/* Conditionally render Navbar only if it's NOT an admin route */}
+      {/* No longer passing isHomePage prop */}
+      {!isAdminRoute && <Navbar />}
 
-          {/* Admin Authentication Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        {/* Admin Routes (no Navbar) */}
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+        <Route path="/admin/stores" element={<AdminStoreListPage />} />
+        <Route path="/admin/stores/new" element={<AdminStoreFormPage />} />
+        <Route path="/admin/stores/edit/:id" element={<AdminStoreFormPage />} />
+        <Route path="/admin/products" element={<AdminProductListPage />} />
+        <Route path="/admin/products/new" element={<AdminProductFormPage />} />
+        <Route
+          path="/admin/products/edit/:id"
+          element={<AdminProductFormPage />}
+        />
 
-          {/* Protected Admin Routes */}
-          <Route path="/admin" element={<PrivateRoute />}>
-            <Route path="dashboard" element={<AdminDashboard />} />
-            {/* Admin Product Routes */}
-            <Route path="products" element={<AdminProductListPage />} />
-            <Route path="products/new" element={<AdminProductFormPage />} />
-            <Route
-              path="products/edit/:id"
-              element={<AdminProductFormPage />}
-            />
-            {/* Admin Store Routes */}
-            <Route path="stores" element={<AdminStoreListPage />} />
-            <Route path="stores/new" element={<AdminStoreFormPage />} />{" "}
-            {/* <--- Use the new component for adding */}
-            <Route
-              path="stores/edit/:id"
-              element={<AdminStoreFormPage />}
-            />{" "}
-            {/* <--- Use the new component for editing */}
-          </Route>
-
-          {/* Fallback route for 404 */}
-          <Route path="*" element={<div>404 Not Found</div>} />
-        </Routes>
-      </div>
-    </Router>
+        {/* Public Routes - Removed pt-[7rem] wrappers for consistent overlay */}
+        <Route
+          path="/today-deals"
+          element={
+            // Removed pt-[7rem]
+            <div className="min-h-screen">
+              <div>Today Deals Page Content (Coming Soon)</div>
+            </div>
+          }
+        />
+        <Route
+          path="/stores"
+          element={
+            // Removed pt-[7rem]
+            <div className="min-h-screen">
+              <div>
+                Public Stores List Page (This route can eventually show all
+                public stores in a gallery)
+              </div>
+            </div>
+          }
+        />
+        {/* StoreDetailsPage will also be updated to remove its internal pt-[7rem] */}
+        <Route path="/stores/:slug" element={<StoreDetailsPage />} />
+        <Route
+          path="/submit-store"
+          element={
+            // Removed pt-[7rem]
+            <div className="min-h-screen">
+              <div>Submit a Store Page Content (Coming Soon)</div>
+            </div>
+          }
+        />
+        <Route
+          path="/contact-us"
+          element={
+            // Removed pt-[7rem]
+            <div className="min-h-screen">
+              <div>Contact Us Page Content (Coming Soon)</div>
+            </div>
+          }
+        />
+      </Routes>
+    </>
   );
-};
+}
 
 export default App;

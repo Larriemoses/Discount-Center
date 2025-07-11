@@ -7,24 +7,29 @@ import {
   getStoreById,
   updateStore,
   deleteStore,
+  getPublicStores, // <--- Import new public functions
+  getStoreBySlug, // <--- Import new public functions
 } from "../controllers/storeController";
 import { protect, authorize } from "../middleware/authMiddleware";
-import upload from "../middleware/uploadMiddleware"; // Assuming this is your Multer setup
+import upload from "../middleware/uploadMiddleware";
 
 const router = express.Router();
 
-// Admin-only routes for fetching stores
-// These routes are now protected to ensure only authenticated admins can access them.
-router.get("/", protect, authorize(["admin"]), getStores); // <--- EDITED: Added protect and authorize
-router.get("/:id", protect, authorize(["admin"]), getStoreById); // <--- EDITED: Added protect and authorize
+// Public routes for getting stores
+router.get("/public", getPublicStores); // <--- NEW PUBLIC ROUTE for Navbar dropdown
+router.get("/by-slug/:slug", getStoreBySlug); // <--- NEW PUBLIC ROUTE for individual store page
 
-// Admin-only routes for managing stores (create, update, delete)
-// These routes already correctly use `protect` and `authorize`.
+// Admin-only routes for managing stores
+// All these routes will use `protect` to ensure a valid token,
+// and `authorize(['admin'])` to ensure the user has the 'admin' role.
+router.get("/", protect, authorize(["admin"]), getStores); // Admin list (already protected)
+router.get("/:id", protect, authorize(["admin"]), getStoreById); // Admin edit (already protected)
+
 router.post(
   "/",
   protect,
   authorize(["admin"]),
-  upload.single("logo"), // 'logo' is the field name for the file
+  upload.single("logo"),
   createStore
 );
 
@@ -32,7 +37,7 @@ router.put(
   "/:id",
   protect,
   authorize(["admin"]),
-  upload.single("logo"), // Allow logo update for PUT request
+  upload.single("logo"),
   updateStore
 );
 
