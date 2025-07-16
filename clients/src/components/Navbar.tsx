@@ -1,22 +1,20 @@
 // client/src/components/Navbar.tsx
 
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import axios from "axios";
 import type { IStore } from "../../../server/src/models/Store";
 
-// Remove NavbarProps interface as isHomePage prop is no longer needed
-// interface NavbarProps {
-//   isHomePage: boolean;
-// }
-
-// Remove the isHomePage prop from the component's signature
 const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isStoreDropdownOpen, setIsStoreDropdownOpen] = useState(false);
   const [publicStores, setPublicStores] = useState<IStore[]>([]);
   const [loadingStores, setLoadingStores] = useState(true);
   const [storesError, setStoresError] = useState("");
+
+  // Cloudinary URL for the logo
+  const LOGO_URL =
+    "https://res.cloudinary.com/dvl2r3bdw/image/upload/v1752540945/image-removebg-preview_uyqjbj.png";
 
   useEffect(() => {
     const fetchPublicStores = async () => {
@@ -41,31 +39,39 @@ const Navbar: React.FC = () => {
     setIsStoreDropdownOpen(false);
   };
 
-  // Navbar will now ALWAYS be solid and relatively positioned
-  const navClasses =
-    "relative w-full z-30 bg-gradient-to-r from-purple-800 to-blue-500 p-4 shadow-md";
+  // Helper function for NavLink classNames to apply active state styling
+  const getNavLinkClasses = ({ isActive }: { isActive: boolean }) =>
+    `transition duration-300 ${
+      isActive ? "text-[#796cf5] font-semibold" : "text-black"
+    } hover:text-[#796cf5]`;
 
-  // No need for conditional link shadow classes since background is solid
-  // Removed linkShadowClasses variable and directly apply text-white
-  // const linkShadowClasses = isHomePage ? "drop-shadow-md" : "";
+  // Navbar will now ALWAYS be solid and relatively positioned with increased height
+  // Increased vertical padding to accommodate larger logo and moderate overall height
+  const navClasses = "relative w-full z-30 bg-white py-1 shadow-md"; // Increased py-6 to py-8
 
   return (
     <nav className={navClasses}>
-      <div className="container mx-auto flex justify-between items-center px-4">
-        {/* Logo/Site Title */}
+      {/* Adjusted horizontal padding for desktop/larger screens, moderate for mobile */}
+      <div className="container mx-auto flex justify-between items-center px-4 sm:px-8 lg:px-20">
+        {" "}
+        {/* Increased lg:px-12 to lg:px-20 */}
+        {/* Logo */}
         <Link
           to="/"
-          className="text-white text-2xl font-bold tracking-wide" // Removed linkShadowClasses
+          className="flex items-center" // Use flex to align image if needed
           onClick={closeAllMenus}
         >
-          Discount Center
+          <img
+            src={LOGO_URL}
+            alt="Discount Center Logo"
+            className="h-20 w-auto" // Increased height from h-16 to h-20 for much bigger logo
+          />
         </Link>
-
         {/* Mobile menu button */}
         <div className="md:hidden">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-white focus:outline-none" // Removed linkShadowClasses
+            className="text-[#796cf5] focus:outline-none hover:text-[#5c4ae0] transition duration-300" // Mobile menu icon is now lilac
           >
             <svg
               className="w-6 h-6"
@@ -92,29 +98,29 @@ const Navbar: React.FC = () => {
             </svg>
           </button>
         </div>
-
         {/* Desktop Navigation Links */}
         <div className="hidden md:flex space-x-6 items-center">
-          <Link
+          <NavLink
             to="/"
-            className="text-white hover:text-gray-200 transition duration-300" // Removed linkShadowClasses
+            className={getNavLinkClasses} // Using NavLink for active styling
             onClick={closeAllMenus}
+            end // Ensures exact match for "/"
           >
             Home
-          </Link>
-          <Link
+          </NavLink>
+          <NavLink
             to="/today-deals"
-            className="text-white hover:text-gray-200 transition duration-300" // Removed linkShadowClasses
+            className={getNavLinkClasses} // Using NavLink for active styling
             onClick={closeAllMenus}
           >
             Today Deals
-          </Link>
+          </NavLink>
 
           {/* Store Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsStoreDropdownOpen(!isStoreDropdownOpen)}
-              className="text-white hover:text-gray-200 transition duration-300 flex items-center focus:outline-none" // Removed linkShadowClasses
+              className="text-black hover:text-[#796cf5] transition duration-300 flex items-center focus:outline-none" // Text black, hover lilac
             >
               Store
               <svg
@@ -146,63 +152,81 @@ const Navbar: React.FC = () => {
                     No stores found.
                   </div>
                 ) : (
-                  publicStores.map((store) => (
+                  <>
+                    {publicStores.map((store) => (
+                      <Link
+                        key={store._id as string}
+                        to={`/stores/${store.slug}`}
+                        className="block px-4 py-2 text-black hover:bg-gray-100 hover:text-[#796cf5] transition duration-300" // Text black, hover lilac, subtle background
+                        onClick={closeAllMenus}
+                      >
+                        {store.name}
+                      </Link>
+                    ))}
+                    {/* See More Stores link */}
                     <Link
-                      key={store._id as string}
-                      to={`/stores/${store.slug}`}
-                      className="block px-4 py-2 text-gray-800 hover:bg-gray-100"
+                      to="/stores" // Assuming /stores lists all stores
+                      className="block px-4 py-2 text-[#796cf5] hover:bg-gray-100 hover:text-[#5c4ae0] transition duration-300 font-semibold border-t border-gray-200 mt-1 pt-2" // Changed text color to lilac, hover to darker lilac
                       onClick={closeAllMenus}
                     >
-                      {store.name}
+                      See More Stores
                     </Link>
-                  ))
+                  </>
                 )}
               </div>
             )}
           </div>
 
-          <Link
+          <NavLink
             to="/submit-store"
-            className="text-white hover:text-gray-200 transition duration-300" // Removed linkShadowClasses
+            className={getNavLinkClasses} // Using NavLink for active styling
             onClick={closeAllMenus}
           >
             Submit a store
-          </Link>
-          <Link
+          </NavLink>
+          <NavLink
             to="/contact-us"
-            className="text-white hover:text-gray-200 transition duration-300" // Removed linkShadowClasses
+            className={getNavLinkClasses} // Using NavLink for active styling
             onClick={closeAllMenus}
           >
             Contact us
-          </Link>
+          </NavLink>
         </div>
       </div>
 
       {/* Mobile Menu (conditionally rendered) */}
       {isMobileMenuOpen && (
-        // Mobile menu: semi-transparent purple, subtle shadow, and blur
-        // This menu always has a semi-transparent background for readability on all pages
-        <div className="md:hidden mt-4 space-y-2 bg-purple-800/90 p-4 rounded-md shadow-lg backdrop-blur-sm">
-          <Link
+        // Mobile menu: semi-transparent white, subtle shadow, and blur
+        <div className="md:hidden mt-4 space-y-2 bg-white/90 p-4 rounded-md shadow-xl backdrop-blur-sm">
+          <NavLink
             to="/"
-            className="block text-white hover:text-gray-200 transition duration-300 py-2"
+            className={({ isActive }) =>
+              `block py-2 ${
+                isActive ? "text-[#796cf5] font-semibold" : "text-black"
+              } hover:text-[#796cf5] transition duration-300`
+            }
             onClick={closeAllMenus}
+            end // Ensures exact match for "/"
           >
             Home
-          </Link>
-          <Link
+          </NavLink>
+          <NavLink
             to="/today-deals"
-            className="block text-white hover:text-gray-200 transition duration-300 py-2"
+            className={({ isActive }) =>
+              `block py-2 ${
+                isActive ? "text-[#796cf5] font-semibold" : "text-black"
+              } hover:text-[#796cf5] transition duration-300`
+            }
             onClick={closeAllMenus}
           >
             Today Deals
-          </Link>
+          </NavLink>
 
           {/* Mobile Store Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsStoreDropdownOpen(!isStoreDropdownOpen)}
-              className="block text-white hover:text-gray-200 transition duration-300 py-2 w-full text-left"
+              className="block text-black hover:text-[#796cf5] transition duration-300 py-2 w-full text-left" // Text black, hover lilac
             >
               Store
               <svg
@@ -234,35 +258,53 @@ const Navbar: React.FC = () => {
                     No stores found.
                   </div>
                 ) : (
-                  publicStores.map((store) => (
+                  <>
+                    {publicStores.map((store) => (
+                      <Link
+                        key={store._id as string}
+                        to={`/stores/${store.slug}`}
+                        className="block px-4 py-2 text-black hover:bg-gray-100 hover:text-[#796cf5] transition duration-300" // Text black, hover lilac, subtle background
+                        onClick={closeAllMenus}
+                      >
+                        {store.name}
+                      </Link>
+                    ))}
+                    {/* See More Stores link */}
                     <Link
-                      key={store._id as string}
-                      to={`/stores/${store.slug}`}
-                      className="block px-4 py-2 text-gray-800 hover:bg-gray-100"
+                      to="/stores" // Assuming /stores lists all stores
+                      className="block px-4 py-2 text-[#796cf5] hover:bg-gray-100 hover:text-[#5c4ae0] transition duration-300 font-semibold border-t border-gray-200 mt-1 pt-2" // Changed text color to lilac, hover to darker lilac
                       onClick={closeAllMenus}
                     >
-                      {store.name}
+                      See More Stores
                     </Link>
-                  ))
+                  </>
                 )}
               </div>
             )}
           </div>
 
-          <Link
+          <NavLink
             to="/submit-store"
-            className="block text-white hover:text-gray-200 transition duration-300 py-2"
+            className={({ isActive }) =>
+              `block py-2 ${
+                isActive ? "text-[#796cf5] font-semibold" : "text-black"
+              } hover:text-[#796cf5] transition duration-300`
+            }
             onClick={closeAllMenus}
           >
             Submit a store
-          </Link>
-          <Link
+          </NavLink>
+          <NavLink
             to="/contact-us"
-            className="block text-white hover:text-gray-200 transition duration-300 py-2"
+            className={({ isActive }) =>
+              `block py-2 ${
+                isActive ? "text-[#796cf5] font-semibold" : "text-black"
+              } hover:text-[#796cf5] transition duration-300`
+            }
             onClick={closeAllMenus}
           >
             Contact us
-          </Link>
+          </NavLink>
         </div>
       )}
     </nav>

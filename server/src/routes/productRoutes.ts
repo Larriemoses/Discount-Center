@@ -1,52 +1,56 @@
 // server/src/routes/productRoutes.ts
 
 import express from "express";
+// Import necessary controllers and middleware
 import {
-  getProducts, // <--- Make sure this is imported
-  createProduct,
-  getProductsByStore,
+  getProducts,
   getProductById,
+  createProduct,
   updateProduct,
   deleteProduct,
+  getProductsByStore,
 } from "../controllers/productController";
-import { protect, authorize } from "../middleware/authMiddleware";
-import upload from "../middleware/uploadMiddleware"; // For image uploads
+import { protect, authorize } from "../middleware/authMiddleware"; // Assuming these exist
+import upload from "../middleware/uploadMiddleware"; // Assuming this exists for image uploads
 
 const router = express.Router();
 
-console.log("Product routes file loaded."); // <--- ADD THIS LOG
+// --- Public routes ---
+// Get top deals (publicly accessible)
+router.get("/top-deals", getProducts); // Note: This route should ideally call a specific 'getTopDeals' controller if it's different from 'getProducts'
 
-// Route to get ALL products (typically for admin overview)
-// This is protected as only admins should fetch all products this way
-// Add a log directly within the route handler before calling getProducts
-router.route("/").get(protect, authorize(["admin"]), (req, res, next) => {
-  console.log("GET /api/products route handler entered."); // <--- ADD THIS LOG
-  getProducts(req, res, next); // Ensure getProducts is called with req, res, next
-});
+// Get products for a specific store (publicly accessible)
+router.get("/stores/:storeId/products", getProductsByStore);
 
-// Public route for getting a single product by its own ID
-router.get("/:id", getProductById);
+// --- Admin routes (require authentication and authorization) ---
 
-// Routes for products associated with a specific store
-router
-  .route("/stores/:storeId/products")
-  .post(
-    protect,
-    authorize(["admin"]),
-    upload.array("images", 5), // 'images' is the field name, allow up to 5 images
-    createProduct
-  )
-  .get(getProductsByStore); // Public route to get all products for a specific store
+// Get all products (for admin list)
+// This route is now protected for admin users
+router.get("/", protect, authorize(["admin"]), getProducts);
 
-// Admin-only routes for updating and deleting products by their ID
+// Product interaction (like, dislike, copy, shop) - often public, but can be protected
+router.post("/:id/interact", getProductById); // Assuming getProductById is meant to be interact, or create a new interact controller
+
+// Routes for creating, updating, and deleting products
+// Note: The POST for creating a product for a store is often nested under stores
+router.post(
+  "/stores/:storeId/products",
+  protect,
+  authorize(["admin"]),
+  upload.array("images", 5), // 'images' is the field name, allow up to 5 images
+  createProduct
+);
+
+// Routes for a single product by its ID (admin operations)
 router
   .route("/:id")
+  .get(getProductById) // Get a single product by its own ID (can be public or protected based on your design)
   .put(
     protect,
     authorize(["admin"]),
     upload.array("images", 5), // Allow updating product images
     updateProduct
   )
-  .delete(protect, authorize(["admin"]), deleteProduct);
+  .delete(protect, authorize(["admin"]), deleteProduct); // <--- THIS IS THE MISSING DELETE ROUTE
 
 export default router;

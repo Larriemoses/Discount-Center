@@ -72,40 +72,58 @@ const AdminStoreListPage: React.FC = () => {
   if (error) return <div className="text-center p-8 text-red-600">{error}</div>;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-md">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Store Management</h1>
-          <div className="flex space-x-4">
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-8">
+      {" "}
+      {/* Added p-4 for smaller screens */}
+      <div className="max-w-full lg:max-w-7xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-md">
+        {" "}
+        {/* Changed max-w-7xl to max-w-full and added responsive padding */}
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
+          {" "}
+          {/* flex-col for mobile, flex-row for larger */}
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-0">
+            Store Management
+          </h1>{" "}
+          {/* Responsive text size */}
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+            {" "}
+            {/* Responsive buttons layout */}
             <Link
               to="/admin/dashboard"
-              className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+              className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 text-center"
             >
               Back to Dashboard
             </Link>
             <Link
               to="/admin/stores/new"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 text-center"
             >
               Add New Store
             </Link>
           </div>
         </div>
-
         {stores.length === 0 ? (
           <p className="text-center text-gray-600">
             No stores found. Add a new one!
           </p>
         ) : (
           <div className="overflow-x-auto">
+            {" "}
+            {/* This is key for table responsiveness */}
             <table className="min-w-full bg-white border border-gray-200">
               <thead>
-                <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                  <th className="py-3 px-6 text-left">Logo</th>
-                  <th className="py-3 px-6 text-left">Name</th>
-                  <th className="py-3 px-6 text-left">Description</th>
-                  <th className="py-3 px-6 text-left">Slug</th>
-                  <th className="py-3 px-6 text-center">Actions</th>
+                <tr className="bg-gray-200 text-gray-600 uppercase text-xs sm:text-sm leading-normal">
+                  {" "}
+                  {/* Responsive text size for headers */}
+                  <th className="py-2 px-4 text-left">Logo</th>{" "}
+                  {/* Adjusted padding */}
+                  <th className="py-2 px-4 text-left">Name</th>
+                  <th className="py-2 px-4 text-left">Description</th>
+                  <th className="py-2 px-4 text-left hidden md:table-cell">
+                    Slug
+                  </th>{" "}
+                  {/* Hide slug on small screens */}
+                  <th className="py-2 px-4 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="text-gray-700 text-sm font-light">
@@ -114,27 +132,38 @@ const AdminStoreListPage: React.FC = () => {
                     key={store._id as string}
                     className="border-b border-gray-200 hover:bg-gray-100"
                   >
-                    <td className="py-3 px-6 text-left">
+                    <td className="py-2 px-4 text-left">
+                      {" "}
+                      {/* Adjusted padding */}
                       {store.logo && store.logo !== "no-photo.jpg" ? (
-                        <img
-                          src={`http://localhost:5000${store.logo}`} // <--- CORRECTED LINE HERE
-                          alt={store.name}
-                          className="w-16 h-16 object-cover rounded"
-                        />
+                        <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded overflow-hidden">
+                          {" "}
+                          {/* Added wrapper div for consistent container */}
+                          <img
+                            src={`http://localhost:5000/uploads/${store.logo}`}
+                            alt={store.name}
+                            className="w-full h-full object-cover" // Ensure image fills its new container, maintaining aspect ratio
+                          />
+                        </div>
                       ) : (
                         <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded text-xs text-gray-400">
                           No Logo
                         </div>
                       )}
                     </td>
-                    <td className="py-3 px-6 text-left font-medium">
+                    <td className="py-2 px-4 text-left font-medium">
                       {store.name}
                     </td>
-                    <td className="py-3 px-6 text-left max-w-xs overflow-hidden text-ellipsis whitespace-nowrap">
+                    <td className="py-2 px-4 text-left max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap sm:max-w-xs">
+                      {" "}
+                      {/* Adjusted max-width for better mobile display */}
                       {store.description}
                     </td>
-                    <td className="py-3 px-6 text-left">{store.slug}</td>
-                    <td className="py-3 px-6 text-center">
+                    <td className="py-2 px-4 text-left hidden md:table-cell">
+                      {store.slug}
+                    </td>{" "}
+                    {/* Hide slug on small screens */}
+                    <td className="py-2 px-4 text-center">
                       <div className="flex item-center justify-center">
                         <Link
                           to={`/admin/stores/edit/${store._id}`}

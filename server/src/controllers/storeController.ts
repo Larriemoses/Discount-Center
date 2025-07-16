@@ -16,28 +16,33 @@ interface CustomRequest extends Request {
 
 // Helper function to delete files
 const deleteFile = (filePath: string) => {
-  // Ensure filePath is a relative path like /uploads/filename.jpg
-  // Construct the full absolute path from the project root
-  if (filePath && filePath !== "no-photo.jpg") {
-    // path.join(__dirname, '..', '..', '..', filePath); // Adjust based on your folder structure
-    // If your uploads folder is at the root level (server/uploads), it would be:
-    // path.join(process.cwd(), filePath)
-    // Given previous context, it's likely __dirname, "..", "..", filePath (from controllers to root)
-    const fullPath = path.join(__dirname, "..", "..", filePath); // This path assumes /server/src/controllers to /uploads
-    // Example: D:\project\server\src\controllers -> D:\project\server\uploads
-    // It should be relative to where your 'uploads' folder actually sits.
-    // If 'uploads' is directly under 'server' folder, then `path.join(__dirname, '..', '..', filePath)` is correct from controller perspective.
+  // Normalize the filePath: remove any leading '/uploads/' if present
+  // This makes the function robust even if the database still contains '/uploads/filename.ext'
+  const normalizedFilePath = filePath.startsWith("/uploads/")
+    ? filePath.substring("/uploads/".length)
+    : filePath;
 
-    if (fs.existsSync(fullPath)) {
-      try {
-        fs.unlinkSync(fullPath);
-        console.log(`Deleted file: ${fullPath}`);
-      } catch (err) {
-        console.error(`Error deleting file ${fullPath}:`, err);
-      }
-    } else {
-      console.warn(`File not found for deletion: ${fullPath}`);
+  // Construct the full absolute path to the actual uploads directory
+  // Assuming 'uploads' is directly under 'server'
+  const fullPath = path.join(
+    __dirname,
+    "..",
+    "..",
+    "uploads",
+    normalizedFilePath
+  );
+
+  if (fs.existsSync(fullPath)) {
+    try {
+      fs.unlinkSync(fullPath);
+      console.log(`Deleted file: ${fullPath}`);
+    } catch (err) {
+      console.error(`Error deleting file ${fullPath}:`, err);
     }
+  } else {
+    console.warn(
+      `File not found for deletion (might be already deleted or path incorrect): ${fullPath}`
+    );
   }
 };
 
@@ -121,7 +126,8 @@ export const createStore = asyncHandler(
     // Basic validation
     if (!name || !description) {
       if (req.file) {
-        deleteFile(`/uploads/${req.file.filename}`);
+        // Delete file using only filename
+        deleteFile(req.file.filename);
       }
       return next(
         new ErrorResponse(
@@ -142,7 +148,8 @@ export const createStore = asyncHandler(
     const existingStore = await Store.findOne({ slug });
     if (existingStore) {
       if (req.file) {
-        deleteFile(`/uploads/${req.file.filename}`);
+        // Delete file using only filename
+        deleteFile(req.file.filename);
       }
       return next(
         new ErrorResponse(
@@ -153,15 +160,14 @@ export const createStore = asyncHandler(
     }
 
     // Handle logo upload
-    const logoPath = req.file
-      ? `/uploads/${req.file.filename}`
-      : "no-photo.jpg";
+    // Store ONLY the filename in the database
+    const logoFilename = req.file ? req.file.filename : "no-photo.jpg";
 
     const newStore: IStore = new Store({
       name,
       description,
       slug,
-      logo: logoPath,
+      logo: logoFilename, // Assign the filename directly
       user: (req as any).user?._id, // Assuming user ID is available from auth middleware
       // Add other default fields like isActive: true, etc., if they exist in your model
     });
@@ -182,11 +188,12 @@ export const updateStore = asyncHandler(
     let { slug } = req.body;
     const storeId = req.params.id;
 
-    let store = await Store.findById(storeId);
+    let store = (await Store.findById(storeId)) as IStore | null; // Cast to IStore | null
 
     if (!store) {
       if (req.file) {
-        deleteFile(`/uploads/${req.file.filename}`);
+        // Delete file using only filename
+        deleteFile(req.file.filename);
       }
       return next(new ErrorResponse("Store not found", 404));
     }
@@ -206,7 +213,8 @@ export const updateStore = asyncHandler(
         });
         if (existingStoreWithSameSlug) {
           if (req.file) {
-            deleteFile(`/uploads/${req.file.filename}`);
+            // Delete file using only filename
+            deleteFile(req.file.filename);
           }
           return next(
             new ErrorResponse(
@@ -223,9 +231,11 @@ export const updateStore = asyncHandler(
     if (req.file) {
       // New logo uploaded, delete old one if it's not 'no-photo.jpg'
       if (store.logo && store.logo !== "no-photo.jpg") {
+        // Delete old file using the filename stored in DB
         deleteFile(store.logo);
       }
-      store.logo = `/uploads/${req.file.filename}`; // Assign the new logo path
+      // Assign the new logo filename directly
+      store.logo = req.file.filename;
     }
     // If no new file, and no explicit 'clearLogo' flag (which you don't have yet),
     // the existing 'store.logo' remains untouched.
@@ -249,7 +259,7 @@ export const updateStore = asyncHandler(
 export const deleteStore = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const storeId = req.params.id;
-    const store = await Store.findById(storeId);
+    const store = (await Store.findById(storeId)) as IStore | null; // Cast to IStore | null
 
     if (!store) {
       return next(new ErrorResponse("Store not found", 404));
@@ -257,6 +267,7 @@ export const deleteStore = asyncHandler(
 
     // Delete associated logo file from the file system if it's not the default
     if (store.logo && store.logo !== "no-photo.jpg") {
+      // Delete file using the filename stored in DB
       deleteFile(store.logo);
     }
 

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
-import HomePage from "./pages/HomePage";
+import HomePage from "./pages/HomePage"; // This will need pt-[7rem]
 import AdminLoginPage from "./pages/AdminLogin";
 import AdminDashboardPage from "./pages/AdminDashboard";
 import AdminStoreListPage from "./pages/AdminStoreListPage";
@@ -10,12 +10,12 @@ import AdminStoreFormPage from "./pages/AdminStoreFormPage";
 import AdminProductListPage from "./pages/AdminProductListPage";
 import AdminProductFormPage from "./pages/AdminProductFormPage";
 import Navbar from "./components/Navbar";
-import StoreDetailsPage from "./pages/StoreDetailsPage";
+import StoreDetailsPage from "./pages/StoreDetailsPage"; // This already has pt-[7rem] from previous step
 
 function App() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
-  // const isHomePage = location.pathname === "/"; // No longer needed here
+  // const isHomePage = location.pathname === "/"; // This line is no longer needed for Navbar styling
 
   return (
     <>
@@ -24,7 +24,9 @@ function App() {
       {!isAdminRoute && <Navbar />}
 
       <Routes>
+        {/* HomePage will now also need pt-[7rem] as it follows a solid Navbar */}
         <Route path="/" element={<HomePage />} />
+
         {/* Admin Routes (no Navbar) */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
@@ -38,12 +40,12 @@ function App() {
           element={<AdminProductFormPage />}
         />
 
-        {/* Public Routes - Removed pt-[7rem] wrappers for consistent overlay */}
+        {/* Public Routes - All these pages now need a wrapper with pt-[Xrem] */}
+        {/* The pt-[7rem] value should match the height of your solid navbar plus some extra space */}
         <Route
           path="/today-deals"
           element={
-            // Removed pt-[7rem]
-            <div className="min-h-screen">
+            <div className="pt-[1rem] min-h-screen">
               <div>Today Deals Page Content (Coming Soon)</div>
             </div>
           }
@@ -51,8 +53,7 @@ function App() {
         <Route
           path="/stores"
           element={
-            // Removed pt-[7rem]
-            <div className="min-h-screen">
+            <div className="pt-[1rem] min-h-screen">
               <div>
                 Public Stores List Page (This route can eventually show all
                 public stores in a gallery)
@@ -60,13 +61,12 @@ function App() {
             </div>
           }
         />
-        {/* StoreDetailsPage will also be updated to remove its internal pt-[7rem] */}
+        {/* StoreDetailsPage already has pt-[7rem] from the previous update */}
         <Route path="/stores/:slug" element={<StoreDetailsPage />} />
         <Route
           path="/submit-store"
           element={
-            // Removed pt-[7rem]
-            <div className="min-h-screen">
+            <div className="pt-[1rem] min-h-screen">
               <div>Submit a Store Page Content (Coming Soon)</div>
             </div>
           }
@@ -74,8 +74,7 @@ function App() {
         <Route
           path="/contact-us"
           element={
-            // Removed pt-[7rem]
-            <div className="min-h-screen">
+            <div className="pt-[1rem] min-h-screen">
               <div>Contact Us Page Content (Coming Soon)</div>
             </div>
           }

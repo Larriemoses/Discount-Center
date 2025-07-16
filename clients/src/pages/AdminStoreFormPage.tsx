@@ -13,7 +13,9 @@ const AdminStoreFormPage: React.FC = () => {
   // Form state for store fields
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [slug, setSlug] = useState(""); // Slug field
+  const [slug, setSlug] = useState("");
+  const [topDealHeadline, setTopDealHeadline] = useState(""); // <--- NEW STATE
+  const [tagline, setTagline] = useState(""); // <--- NEW STATE
   const [logo, setLogo] = useState<File | null>(null); // For new logo file
   const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null); // For logo already on the server
 
@@ -36,11 +38,13 @@ const AdminStoreFormPage: React.FC = () => {
               headers: { Authorization: `Bearer ${adminToken}` },
             }
           );
-          const store: IStore = response.data;
+          const store: IStore = response.data; // Assuming response.data directly contains the IStore object
 
           setName(store.name);
           setDescription(store.description);
           setSlug(store.slug);
+          setTopDealHeadline(store.topDealHeadline || ""); // <--- Set existing topDealHeadline
+          setTagline(store.tagline || ""); // <--- Set existing tagline
           setExistingLogoUrl(
             store.logo && store.logo !== "no-photo.jpg"
               ? `/uploads/${store.logo}`
@@ -73,44 +77,37 @@ const AdminStoreFormPage: React.FC = () => {
     const formData = new FormData();
     formData.append("name", name);
     formData.append("description", description);
-    formData.append("slug", slug); // Append slug
+    formData.append("slug", slug);
+    formData.append("topDealHeadline", topDealHeadline); // <--- APPEND NEW FIELD
+    formData.append("tagline", tagline); // <--- APPEND NEW FIELD
 
     if (logo) {
       formData.append("logo", logo); // Append new logo file
     } else if (id && existingLogoUrl === null) {
-      // If in edit mode and user explicitly cleared existing logo (future feature)
-      // Or if no new logo is selected and there was no existing one, this is fine.
-      // If you want to allow explicitly removing a logo, you might add a checkbox
-      // and send a `clearLogo: true` flag. For now, we assume if `logo` is null
-      // and `existingLogoUrl` is null, no logo is desired.
+      // Logic for explicitly clearing logo (if you had a checkbox for it)
+      // For now, if existingLogoUrl is null and no new logo, it means no logo.
+      // If you want to explicitly remove a logo that was there, you'd need
+      // a specific mechanism (e.g., a "Clear Logo" checkbox that sets a flag).
     }
 
     try {
       if (id) {
         // --- EDIT STORE ---
-        const response = await axios.put(
-          `http://localhost:5000/api/stores/${id}`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${adminToken}`,
-              "Content-Type": "multipart/form-data", // Important for file uploads
-            },
-          }
-        );
+        await axios.put(`http://localhost:5000/api/stores/${id}`, formData, {
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            "Content-Type": "multipart/form-data", // Important for file uploads
+          },
+        });
         alert("Store updated successfully!");
       } else {
         // --- ADD NEW STORE ---
-        const response = await axios.post(
-          `http://localhost:5000/api/stores`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${adminToken}`,
-              "Content-Type": "multipart/form-data", // Important for file uploads
-            },
-          }
-        );
+        await axios.post(`http://localhost:5000/api/stores`, formData, {
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            "Content-Type": "multipart/form-data", // Important for file uploads
+          },
+        });
         alert("Store added successfully!");
       }
       navigate("/admin/stores"); // Redirect back to store list after success
@@ -170,13 +167,49 @@ const AdminStoreFormPage: React.FC = () => {
             />
           </div>
 
+          {/* Top Deal Headline (Subtitle) */}
+          <div>
+            <label
+              htmlFor="topDealHeadline"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Top Deal Headline (Subtitle):
+            </label>
+            <input
+              type="text"
+              id="topDealHeadline"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              value={topDealHeadline}
+              onChange={(e) => setTopDealHeadline(e.target.value)}
+              placeholder="e.g., Shop our latest arrivals!"
+            />
+          </div>
+
+          {/* Tagline (Sub-subtitle) */}
+          <div>
+            <label
+              htmlFor="tagline"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Tagline (Short Motto/Message):
+            </label>
+            <input
+              type="text"
+              id="tagline"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              value={tagline}
+              onChange={(e) => setTagline(e.target.value)}
+              placeholder="e.g., Your trusted source for quality deals."
+            />
+          </div>
+
           {/* Description */}
           <div>
             <label
               htmlFor="description"
               className="block text-gray-700 text-sm font-bold mb-2"
             >
-              Description:
+              Description (Full Details):
             </label>
             <textarea
               id="description"
@@ -224,7 +257,7 @@ const AdminStoreFormPage: React.FC = () => {
               <div className="mt-2">
                 <p className="text-sm text-gray-600">Current Logo:</p>
                 <img
-                  src={`http://localhost:5000${existingLogoUrl}`} // Adjust path if needed
+                  src={`http://localhost:5000${existingLogoUrl}`}
                   alt="Existing Store Logo"
                   className="w-24 h-24 object-contain rounded-full shadow"
                 />
@@ -239,10 +272,8 @@ const AdminStoreFormPage: React.FC = () => {
 
           {/* Submit Button and Back to Dashboard Button */}
           <div className="flex justify-between items-center mt-6">
-            {" "}
-            {/* <--- Modified div for spacing */}
             <Link
-              to="/admin/dashboard" // <--- Link to Admin Dashboard
+              to="/admin/dashboard"
               className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300"
             >
               Back to Dashboard

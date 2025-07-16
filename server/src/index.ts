@@ -1,9 +1,7 @@
-// src/index.ts
-
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import path from "path";
-import { connectDB } from "./config/db"; // Your DB connection
+import { connectDB } from "./config/db";
 import cors from "cors";
 
 // Import your custom middleware for error handling
@@ -25,8 +23,8 @@ const port = process.env.PORT || 5000;
 // Configure CORS for frontend communication
 app.use(
   cors({
-    origin: "http://localhost:5173", // <--- This must EXACTLY match your frontend URL (e.g., Vite dev server)
-    credentials: true, // This is important for cookies, sessions, or sending auth tokens (like bearer tokens)
+    origin: "http://localhost:5173", // <--- Ensure this EXACTLY matches your frontend URL (e.g., Vite dev server)
+    credentials: true,
   })
 );
 
@@ -37,9 +35,21 @@ app.use(express.urlencoded({ extended: true })); // For parsing application/x-ww
 // Connect to MongoDB
 connectDB();
 
+// --- START: STATIC FILE SERVING CONFIGURATION ---
+
+// Define the absolute path to your project root (DISCOUNT-CENTER/)
+// This assumes your server directory (which contains src and uploads) is directly under the project root.
+// If index.ts is in server/src, then path.resolve(__dirname, '../../') goes up two levels
+// to reach the 'DISCOUNT-CENTER' directory.
+const PROJECT_ROOT_DIR = path.resolve(__dirname, "../../");
+
 // Serve static files from the 'uploads' directory
-// Assumes 'uploads' folder is a sibling to 'src' within the 'server' directory
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+// This constructs the path: <PROJECT_ROOT_DIR>/server/uploads
+app.use(
+  "/uploads",
+  express.static(path.join(PROJECT_ROOT_DIR, "server", "uploads"))
+);
+// --- END: STATIC FILE SERVING CONFIGURATION ---
 
 // Basic root route for API status check
 app.get("/", (req: Request, res: Response) => {
@@ -66,5 +76,4 @@ app.listen(port, () => {
   console.log(
     `Server is running in ${process.env.NODE_ENV} mode on http://localhost:${port}`
   );
-  // console.log(`JWT_SECRET from .env: ${process.env.JWT_SECRET}`); // Optional: for debugging, remove in production
 });
