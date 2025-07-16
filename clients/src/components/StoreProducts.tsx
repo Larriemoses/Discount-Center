@@ -4,20 +4,17 @@ import { useParams, Link } from "react-router-dom";
 import api from "../services/api";
 import { AxiosError } from "axios";
 
-// Interface for a Store (matching your backend IStore model)
-// This is added here because StoreProducts needs full store details
 interface IStore {
   _id: string;
   name: string;
   description: string;
   slug: string;
   logo?: string;
-  topDealHeadline?: string; // <--- ADDED: Headline for the store's main deal page
+  topDealHeadline?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-// Interface for a Product (matching your backend IProduct model)
 interface IProduct {
   _id: string;
   name: string;
@@ -26,8 +23,6 @@ interface IProduct {
   discountedPrice?: number;
   category?: string;
   images: string[];
-  // The 'store' property here is what's returned by the product API,
-  // it might be a partial object, hence why we also fetch full storeDetails
   store: {
     _id: string;
     name: string;
@@ -40,7 +35,7 @@ interface IProduct {
   shopNowUrl: string;
   successRate: number;
   totalUses: number;
-  todayUses: number;
+  todayUses: number; // This is the field we're targeting
   createdAt: string;
   updatedAt: string;
 }
@@ -48,9 +43,12 @@ interface IProduct {
 const StoreProducts: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
   const [products, setProducts] = useState<IProduct[]>([]);
-  const [storeDetails, setStoreDetails] = useState<IStore | null>(null); // To hold full store details
+  const [storeDetails, setStoreDetails] = useState<IStore | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Helper to get today's date string for localStorage keys
+  const getTodayDateString = () => new Date().toDateString();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -64,16 +62,38 @@ const StoreProducts: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // First, fetch the full store details to get logo and topDealHeadline
         const storeResponse = await api.get(`/stores/${storeId}`);
         setStoreDetails(storeResponse.data);
 
-        // Then, fetch products for the specific storeId
         const productsResponse = await api.get(
           `/products/stores/${storeId}/products`
         );
         if (Array.isArray(productsResponse.data)) {
-          setProducts(productsResponse.data);
+          let fetchedProducts: IProduct[] = productsResponse.data;
+
+          // --- ONE-TIME FRONTEND FORCE RESET LOGIC (FOR `StoreProducts.tsx`) ---
+          const forceResetKey = "forceResetTodayUses_StoreProducts";
+          const lastForceResetDate = localStorage.getItem(forceResetKey);
+          const today = getTodayDateString();
+
+          if (lastForceResetDate !== today) {
+            // Check if force reset ran today
+            console.log(
+              "StoreProducts: Performing one-time force reset of 'todayUses'."
+            );
+            fetchedProducts = fetchedProducts.map((product) => ({
+              ...product,
+              todayUses: 0, // Force reset to 0
+            }));
+            localStorage.setItem(forceResetKey, today); // Mark as done for today
+          } else {
+            console.log(
+              "StoreProducts: One-time force reset already ran today."
+            );
+          }
+          // --- END ONE-TIME FRONTEND FORCE RESET LOGIC ---
+
+          setProducts(fetchedProducts);
         } else {
           console.error(
             "Backend /products endpoint did not return an array:",
@@ -109,6 +129,38 @@ const StoreProducts: React.FC = () => {
     fetchData();
   }, [storeId]);
 
+  // Handle Copy Button Click - Update frontend state for immediate visual feedback
+  const handleCopyCode = async (productId: string, code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+
+      // Optimistic UI update: immediately increment totalUses and todayUses
+      setProducts((prevProducts) =>
+        prevProducts.map((p) =>
+          p._id === productId
+            ? { ...p, totalUses: p.totalUses + 1, todayUses: p.todayUses + 1 }
+            : p
+        )
+      );
+
+      // Call backend to record the interaction
+      await api.post(`/products/${productId}/interact`, { action: "copy" });
+      // The backend will send back updated counts if successful, but our optimistic update is faster.
+      // If the backend response contradicts, a full re-fetch or more complex state sync might be needed.
+    } catch (err) {
+      console.error("Failed to copy or update interaction:", err);
+      // Revert optimistic update if there was an error (optional, but good for robustness)
+      setProducts((prevProducts) =>
+        prevProducts.map((p) =>
+          p._id === productId
+            ? { ...p, totalUses: p.totalUses - 1, todayUses: p.todayUses - 1 }
+            : p
+        )
+      );
+      // Show an error message to the user
+    }
+  };
+
   if (loading) {
     return (
       <p className="text-center text-lg mt-8">
@@ -128,7 +180,6 @@ const StoreProducts: React.FC = () => {
     );
   }
 
-  // If storeDetails is null but not loading and no error, something went wrong
   if (!storeDetails) {
     return <p className="text-center text-lg mt-8">Store details not found.</p>;
   }
@@ -142,9 +193,8 @@ const StoreProducts: React.FC = () => {
         &larr; Back to All Stores
       </Link>
 
-      {/* --- Main Headline Section for the Store --- */}
       {storeDetails.topDealHeadline && (
-        <div className="  p-6 text-center mb-2">
+        <div className="p-6 text-center mb-2">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight mb-2">
             {storeDetails.topDealHeadline}
           </h2>
@@ -160,7 +210,6 @@ const StoreProducts: React.FC = () => {
             curated by Discount Center
           </p>
 
-          {/* Store Logo within the Headline Section as seen in mockup */}
           {storeDetails.logo && storeDetails.logo !== "no-photo.jpg" ? (
             <img
               src={`${import.meta.env.VITE_BACKEND_URL?.replace("/api", "")}${
@@ -193,7 +242,6 @@ const StoreProducts: React.FC = () => {
               key={product._id}
               className="bg-white rounded-lg shadow-md p-6 transform hover:scale-105 transition-transform duration-200 ease-in-out flex flex-col"
             >
-              {/* Small Store Logo on Product Card (using storeDetails.logo as per image) */}
               {storeDetails.logo && storeDetails.logo !== "no-photo.jpg" ? (
                 <img
                   src={`${import.meta.env.VITE_BACKEND_URL?.replace(
@@ -209,7 +257,6 @@ const StoreProducts: React.FC = () => {
                 </div>
               )}
 
-              {/* Product Title / Deal Description */}
               <h4 className="text-xl font-semibold mb-2 text-gray-900 line-clamp-2">
                 {product.name}
               </h4>
@@ -217,7 +264,6 @@ const StoreProducts: React.FC = () => {
                 {product.description}
               </p>
 
-              {/* Discount Code & Copy Button */}
               <div className="bg-purple-100 border border-purple-300 rounded-md p-3 mb-4 text-center">
                 <p className="text-purple-800 font-bold text-lg mb-2">
                   Discount Code:
@@ -228,7 +274,7 @@ const StoreProducts: React.FC = () => {
                   </span>
                   <button
                     onClick={() =>
-                      navigator.clipboard.writeText(product.discountCode)
+                      handleCopyCode(product._id, product.discountCode)
                     }
                     className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200"
                   >
@@ -237,7 +283,6 @@ const StoreProducts: React.FC = () => {
                 </div>
               </div>
 
-              {/* Shop Now Button */}
               <a
                 href={product.shopNowUrl}
                 target="_blank"
@@ -247,7 +292,6 @@ const StoreProducts: React.FC = () => {
                 SHOP NOW
               </a>
 
-              {/* Usage Statistics */}
               <div className="flex justify-between items-center text-gray-600 text-sm mt-auto">
                 <span className="flex items-center">
                   <span className="text-green-500 font-bold mr-1">👍</span>{" "}

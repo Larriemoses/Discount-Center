@@ -1,8 +1,12 @@
+// server/src/index.ts
+
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import path from "path";
 import { connectDB } from "./config/db";
 import cors from "cors";
+import cron from "node-cron"; // <--- NEW: For scheduled tasks
+import Product from "./models/Product"; // <--- NEW: Import Product model for cron job
 
 // Import your custom middleware for error handling
 import { notFound } from "./middleware/notFoundMiddleware";
@@ -34,6 +38,40 @@ app.use(express.urlencoded({ extended: true })); // For parsing application/x-ww
 
 // Connect to MongoDB
 connectDB();
+
+// --- START: Global Daily Reset Cron Job (Optional but Recommended) ---
+// This job runs every day at 12:00 AM (midnight)
+// It ensures todayUses is reset for ALL products, even if they aren't interacted with.
+cron.schedule(
+  "0 0 * * *",
+  async () => {
+    console.log("Running daily todayUses reset cron job...");
+    const todayMidnight = new Date();
+    todayMidnight.setHours(0, 0, 0, 0); // Set to midnight of current day
+
+    try {
+      // Update all products where lastDailyReset is NOT today's midnight
+      const result = await Product.updateMany(
+        { lastDailyReset: { $ne: todayMidnight } },
+        {
+          $set: {
+            todayUses: 0,
+            lastDailyReset: todayMidnight,
+          },
+        }
+      );
+      console.log(
+        `Daily reset complete. Matched ${result.matchedCount} products, modified ${result.modifiedCount}.`
+      );
+    } catch (error) {
+      console.error("Error during daily todayUses reset cron job:", error);
+    }
+  },
+  {
+    timezone: "Africa/Lagos", // <--- IMPORTANT: Set your server's timezone here
+  }
+);
+// --- END: Global Daily Reset Cron Job ---
 
 // --- START: STATIC FILE SERVING CONFIGURATION ---
 

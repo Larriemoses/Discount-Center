@@ -6,17 +6,16 @@ import Product, { IProduct } from "../models/Product";
 import Store from "../models/Store";
 import path from "path";
 import fs from "fs";
-import mongoose from "mongoose"; // Import mongoose for ObjectId checks
+import mongoose from "mongoose";
+import slugify from "slugify";
 
 // Helper function to delete files from the 'uploads' directory
 const deleteFiles = (filePaths: string[]) => {
   filePaths.forEach((filePath) => {
-    // Normalize the filePath: remove any leading '/uploads/' if present
     const normalizedFilePath = filePath.startsWith("/uploads/")
       ? filePath.substring("/uploads/".length)
       : filePath;
 
-    // Construct the full absolute path to the actual uploads directory
     const fullPath = path.join(
       __dirname,
       "..",
@@ -40,18 +39,52 @@ const deleteFiles = (filePaths: string[]) => {
   });
 };
 
-// GET all products (for Admin List Page)
+// Helper to get today's date at midnight for comparison
+const getTodayMidnight = () => {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0); // Set to midnight of current day
+  return now;
+};
+
+// Function to apply the daily reset logic to a product
+const applyDailyReset = async (product: IProduct) => {
+  const today = getTodayMidnight();
+  // Use .toDateString() for date-only comparison, ignoring time
+  if (
+    !product.lastDailyReset ||
+    product.lastDailyReset.toDateString() !== today.toDateString()
+  ) {
+    console.log(
+      `Resetting todayUses for product: ${product.name} (ID: ${product._id})`
+    );
+    product.todayUses = 0;
+    product.lastDailyReset = today; // Update the reset date
+    await product.save(); // Save the changes to the database
+  }
+};
+
+// @desc    Get all products (for Admin List Page)
+// @route   GET /api/products
+// @access  Public / Admin
 export const getProducts = asyncHandler(async (req: Request, res: Response) => {
-  // Populate store details including name and logo
   const products = await Product.find({}).populate("store", "name logo");
+
+  const updatedProducts = [];
+  for (let product of products) {
+    await applyDailyReset(product); // Use the helper
+    updatedProducts.push(product);
+  }
+
   res.status(200).json({
     success: true,
-    count: products.length,
-    data: products,
+    count: updatedProducts.length,
+    data: updatedProducts,
   });
 });
 
-// GET all products for a specific store
+// @desc    Get all products for a specific store
+// @route   GET /api/products/stores/:storeId/products
+// @access  Public
 export const getProductsByStore = asyncHandler(
   async (req: Request, res: Response) => {
     const { storeId } = req.params;
@@ -64,11 +97,20 @@ export const getProductsByStore = asyncHandler(
       "store",
       "name logo"
     );
-    res.status(200).json(products);
+
+    const updatedProducts = [];
+    for (let product of products) {
+      await applyDailyReset(product); // Use the helper
+      updatedProducts.push(product);
+    }
+
+    res.status(200).json(updatedProducts);
   }
 );
 
-// GET a single product by its ID
+// @desc    Get a single product by its ID
+// @route   GET /api/products/:id
+// @access  Public
 export const getProductById = asyncHandler(
   async (req: Request, res: Response) => {
     const product = (await Product.findById(req.params.id).populate(
@@ -76,16 +118,20 @@ export const getProductById = asyncHandler(
       "name logo"
     )) as IProduct | null;
 
-    if (product) {
-      res.status(200).json(product);
-    } else {
+    if (!product) {
       res.status(404);
       throw new Error("Product not found");
     }
+
+    await applyDailyReset(product); // Use the helper
+
+    res.status(200).json(product);
   }
 );
 
-// CREATE a new product for a store
+// @desc    Create new product for a store
+// @route   POST /api/stores/:storeId/products
+// @access  Private (Admin)
 export const createProduct = asyncHandler(
   async (req: Request, res: Response) => {
     const { storeId } = req.params;
@@ -122,16 +168,19 @@ export const createProduct = asyncHandler(
     }
 
     let productImages: string[] = [];
-    if (store.logo) {
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      productImages = req.files.map(
+        (file: Express.Multer.File) => `/uploads/${file.filename}`
+      );
+    } else if (store.logo) {
       productImages = [store.logo];
     } else if (store.images && store.images.length > 0) {
       productImages = store.images;
-    } else {
-      productImages = [];
     }
 
     const newProduct: IProduct = new Product({
       name,
+      slug: slugify(name, { lower: true, strict: true }),
       description,
       price,
       discountedPrice: discountedPrice || undefined,
@@ -149,7 +198,9 @@ export const createProduct = asyncHandler(
   }
 );
 
-// UPDATE a product
+// @desc    Update a product
+// @route   PUT /api/products/:id
+// @access  Private (Admin)
 export const updateProduct = asyncHandler(
   async (req: Request, res: Response) => {
     const {
@@ -178,7 +229,19 @@ export const updateProduct = asyncHandler(
       throw new Error("Product not found");
     }
 
-    product.name = name !== undefined ? name : product.name;
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      req.body.images = req.files.map(
+        (file: Express.Multer.File) => `/uploads/${file.filename}`
+      );
+    }
+
+    if (name !== undefined && name !== product.name) {
+      product.name = name;
+      product.slug = slugify(name, { lower: true, strict: true });
+    } else if (name !== undefined) {
+      product.name = name;
+    }
+
     product.description =
       description !== undefined ? description : product.description;
     product.price = price !== undefined ? price : product.price;
@@ -199,10 +262,8 @@ export const updateProduct = asyncHandler(
     product.likes = likes !== undefined ? likes : product.likes;
     product.dislikes = dislikes !== undefined ? dislikes : product.dislikes;
 
-    // Handle store change and update product images accordingly
     if (newStoreId) {
       let currentStoreIdString: string;
-      // Determine the string representation of the current store ID
       if (product.store instanceof mongoose.Types.ObjectId) {
         currentStoreIdString = product.store.toString();
       } else if (
@@ -210,10 +271,8 @@ export const updateProduct = asyncHandler(
         typeof product.store === "object" &&
         "_id" in product.store
       ) {
-        // If it's a populated document
         currentStoreIdString = (product.store as any)._id.toString();
       } else {
-        // Fallback for unexpected cases, or if product.store is already a string
         currentStoreIdString = String(product.store);
       }
 
@@ -223,14 +282,16 @@ export const updateProduct = asyncHandler(
           res.status(404);
           throw new Error("New store not found.");
         }
-        product.store = newStoreId; // Update the store reference
+        product.store = newStoreId;
 
-        if (newStore.logo) {
-          product.images = [newStore.logo];
-        } else if (newStore.images && newStore.images.length > 0) {
-          product.images = newStore.images;
-        } else {
-          product.images = [];
+        if (!(req.files && Array.isArray(req.files) && req.files.length > 0)) {
+          if (newStore.logo) {
+            product.images = [newStore.logo];
+          } else if (newStore.images && newStore.images.length > 0) {
+            product.images = newStore.images;
+          } else {
+            product.images = [];
+          }
         }
       }
     }
@@ -240,7 +301,9 @@ export const updateProduct = asyncHandler(
   }
 );
 
-// DELETE a product
+// @desc    Delete a product
+// @route   DELETE /api/products/:id
+// @access  Private (Admin)
 export const deleteProduct = asyncHandler(
   async (req: Request, res: Response) => {
     const productId = req.params.id;
@@ -251,17 +314,22 @@ export const deleteProduct = asyncHandler(
       throw new Error("Product not found");
     }
 
+    if (product.images && product.images.length > 0) {
+      deleteFiles(product.images);
+    }
+
     await Product.deleteOne({ _id: productId });
     res.status(200).json({ message: "Product removed successfully" });
   }
 );
 
-// Interact with a product (like, dislike, copy, shop)
+// @desc    Handle product interaction (copy, shop, like, dislike)
+// @route   POST /api/products/:id/interact
+// @access  Public
 export const interactProduct = asyncHandler(
   async (req: Request, res: Response) => {
-    // Removed any type annotation here
     const { id } = req.params;
-    const { action } = req.body;
+    const { action } = req.body; // 'copy', 'shop', 'like', 'dislike'
 
     console.log(
       `Backend: Received interaction for product ID: ${id}, action: ${action}`
@@ -271,21 +339,33 @@ export const interactProduct = asyncHandler(
 
     if (!product) {
       console.log(`Backend: Product with ID ${id} not found.`);
-      res.status(404).json({ success: false, message: "Product not found" }); // Changed line
-      return; // Added line to explicitly return void after sending response
+      res.status(404).json({ success: false, message: "Product not found" });
+      return;
     }
 
     console.log(
-      `Backend: Product before update: Total Uses=${product.totalUses}, Today Uses=${product.todayUses}, Likes=${product.likes}, Dislikes=${product.dislikes}, Success Rate=${product.successRate}`
+      `Backend: Product before update: Total Uses=${product.totalUses}, Today Uses=${product.todayUses}, Likes=${product.likes}, Dislikes=${product.dislikes}, Success Rate=${product.successRate}, Last Reset=${product.lastDailyReset}`
     );
 
-    product.totalUses = (product.totalUses || 0) + 1;
-    product.todayUses = (product.todayUses || 0) + 1;
+    await applyDailyReset(product);
 
-    if (action === "like") {
-      product.likes = (product.likes || 0) + 1;
-    } else if (action === "dislike") {
-      product.dislikes = (product.dislikes || 0) + 1;
+    switch (action) {
+      case "copy":
+      case "shop":
+        product.totalUses = (product.totalUses || 0) + 1;
+        product.todayUses = (product.todayUses || 0) + 1;
+        break;
+      case "like":
+        product.likes = (product.likes || 0) + 1;
+        break;
+      case "dislike":
+        product.dislikes = (product.dislikes || 0) + 1;
+        break;
+      default:
+        res
+          .status(400)
+          .json({ success: false, message: "Invalid interaction action" });
+        return;
     }
 
     const totalFeedback = (product.likes || 0) + (product.dislikes || 0);
@@ -297,28 +377,28 @@ export const interactProduct = asyncHandler(
       product.successRate = 100;
     }
 
+    // Save the updated product
     await product.save();
 
     console.log(
-      `Backend: Product after update and save: Total Uses=${product.totalUses}, Today Uses=${product.todayUses}, Likes=${product.likes}, Dislikes=${product.dislikes}, Success Rate=${product.successRate}`
+      `Backend: Product after update and save: Total Uses=${product.totalUses}, Today Uses=${product.todayUses}, Likes=${product.likes}, Dislikes=${product.dislikes}, Success Rate=${product.successRate}, Last Reset=${product.lastDailyReset}`
     );
 
+    // ***************************************************************
+    // >>>>>>>>>> THIS IS THE ONLY CHANGE YOU NEED TO MAKE <<<<<<<<<<
+    // ***************************************************************
     res.status(200).json({
       success: true,
       message: `${action} successful`,
-      data: {
-        _id: product._id,
-        totalUses: product.totalUses,
-        todayUses: product.todayUses,
-        successRate: product.successRate,
-        likes: product.likes,
-        dislikes: product.dislikes,
-      },
+      data: product, // <--- CHANGED from sending only a subset of fields
     });
+    // ***************************************************************
   }
 );
 
-// Get top deals controller
+// @desc    Get top deals controller
+// @route   GET /api/products/top-deals
+// @access  Public
 export const getTopDeals = asyncHandler(async (req: Request, res: Response) => {
   try {
     const topDeals = await Product.find({ isActive: true })
@@ -326,12 +406,17 @@ export const getTopDeals = asyncHandler(async (req: Request, res: Response) => {
       .limit(10)
       .populate("store", "name logo slug topDealHeadline");
 
+    const updatedTopDeals = [];
+    for (let product of topDeals) {
+      await applyDailyReset(product);
+      updatedTopDeals.push(product);
+    }
+
     res.status(200).json({
       success: true,
-      data: topDeals,
+      data: updatedTopDeals,
       message: "Top deals fetched successfully",
     });
-    // Do not return anything
   } catch (error: any) {
     console.error("Error fetching top deals:", error);
     res.status(500).json({
@@ -339,6 +424,5 @@ export const getTopDeals = asyncHandler(async (req: Request, res: Response) => {
       message: "Server Error",
       error: error.message,
     });
-    // Do not return anything
   }
 });
