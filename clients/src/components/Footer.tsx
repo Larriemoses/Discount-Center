@@ -22,7 +22,7 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Navigation Links - Updated for CSS Grid layout */}
-        <nav className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-x-4 gap-y-2 text-sm text-gray-400 w-full max-w-lg mb-4">
+        <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm text-gray-400 w-full max-w-lg mb-4">
           <Link
             to="/privacy-policy" // Placeholder route, you'll need to create this page
             className="text-center hover:text-white transition-colors duration-300"

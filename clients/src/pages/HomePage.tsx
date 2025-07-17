@@ -51,7 +51,6 @@ const HomePage: React.FC = () => {
       {/* New WhyChooseUsSection, placed after TopDealsSection with its own top margin */}
       <WhyChooseUsSection className="mt-12 sm:mt-16" />
       {/* The "More exciting content coming soon!" section is removed as footer is added */}
-     
     </>
   );
 };

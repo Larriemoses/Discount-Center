@@ -16,21 +16,22 @@ const WhyChooseUsSection: React.FC<WhyChooseUsSectionProps> = ({
     <section
       className={`${className || ""} bg-white py-12 px-4 sm:px-6 lg:px-8`}
     >
-      <div className="max-w-4xl mx-auto text-center">
-        {/* Section Title */}
-        <h2 className="text-3xl md:text-4xl font-extrabold text-gray-800 mb-8">
+      {/* Main container for content, controlling overall width and centering */}
+      <div className="max-w-4xl mx-auto w-[90%] sm:w-full">
+        {/* Section Title - centered */}
+        <h2 className="text-2xl md:text-4xl font-extrabold text-gray-800 mb-8 text-center">
           Why Choose Discount Center
         </h2>
 
-        {/* Introductory Paragraph */}
-        <p className="text-lg text-gray-700 leading-relaxed mb-8 max-w-3xl mx-auto">
+        {/* Introductory Paragraph - left-aligned on mobile, but centered as a block */}
+        <p className="text-base sm:text-lg text-gray-700 leading-relaxed mb-8 max-w-3xl mx-auto text-center">
           Why choose Oraimo Nigeria? Oraimo Nigeria is the go-to brand for
           high-quality tech accessories designed for the Nigerian market. Here's
           what makes it stand out:
         </p>
 
-        {/* List of Reasons */}
-        <div className="text-left text-gray-700 text-lg leading-relaxed space-y-4 max-w-2xl mx-auto">
+        {/* List of Reasons - left-aligned text, centered as a block */}
+        <div className="text-left text-gray-700 text-base sm:text-lg leading-relaxed space-y-4 max-w-2xl mx-auto">
           <p>
             <strong>1. Built for Nigerians</strong> Oraimo's products are
             designed with Nigerians' unique needs in mind, providing
@@ -73,7 +74,7 @@ const WhyChooseUsSection: React.FC<WhyChooseUsSectionProps> = ({
           </p>
         </div>
 
-        {/* Discount Center Logo */}
+        {/* Discount Center Logo - centered */}
         <div className="mt-12 flex justify-center">
           <img
             src={LOGO_URL}
@@ -82,15 +83,16 @@ const WhyChooseUsSection: React.FC<WhyChooseUsSectionProps> = ({
           />
         </div>
 
+        {/* Horizontal line - centered */}
         <hr className="border-t-2 border-purple-400 w-full max-w-4xl mx-auto mt-8" />
 
-        {/* Connect With Us Section - Added as per image_01ac25.png */}
+        {/* Connect With Us Section */}
         <div className="mt-16">
-          {" "}
-          {/* Increased top margin for separation */}
-          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-800 mb-8">
+          {/* Title - centered */}
+          <h2 className="text-2xl md:text-4xl font-extrabold text-gray-800 mb-8 text-center">
             Connect With Us
           </h2>
+          {/* Buttons - centered as a group */}
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             {/* WhatsApp Button */}
             <a
@@ -145,8 +147,6 @@ const WhyChooseUsSection: React.FC<WhyChooseUsSectionProps> = ({
             </a>
           </div>
         </div>
-
-        {/* Bottom purple line (mimicking the image) */}
       </div>
     </section>
   );
