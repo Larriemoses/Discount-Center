@@ -1,7 +1,6 @@
 // client/src/components/Navbar.tsx
-
 import React, { useState, useEffect } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom"; // Keep NavLink for other items, import Link
 import axios from "axios";
 import type { IStore } from "../../../server/src/models/Store";
 
@@ -12,7 +11,6 @@ const Navbar: React.FC = () => {
   const [loadingStores, setLoadingStores] = useState(true);
   const [storesError, setStoresError] = useState("");
 
-  // Cloudinary URL for the logo
   const LOGO_URL =
     "https://res.cloudinary.com/dvl2r3bdw/image/upload/v1752540945/image-removebg-preview_uyqjbj.png";
 
@@ -33,45 +31,54 @@ const Navbar: React.FC = () => {
     fetchPublicStores();
   }, []);
 
-  // Function to close both dropdowns (useful for navigation)
   const closeAllMenus = () => {
     setIsMobileMenuOpen(false);
     setIsStoreDropdownOpen(false);
   };
 
-  // Helper function for NavLink classNames to apply active state styling
   const getNavLinkClasses = ({ isActive }: { isActive: boolean }) =>
     `transition duration-300 ${
       isActive ? "text-[#796cf5] font-semibold" : "text-black"
     } hover:text-[#796cf5]`;
 
-  // Navbar will now ALWAYS be solid and relatively positioned with increased height
-  // Increased vertical padding to accommodate larger logo and moderate overall height
-  const navClasses = "relative w-full z-30 bg-white py-1 shadow-md"; // Increased py-6 to py-8
+  // Define a common class for the Today Deals link, as it won't use NavLink's isActive
+  const getTodayDealsLinkClasses = "transition duration-300 text-black hover:text-[#796cf5]";
+
+  const navClasses = "relative w-full z-30 bg-white py-1 shadow-md";
+
+  // Function to handle "Today Deals" click for scrolling
+  const handleTodayDealsClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    closeAllMenus();
+    event.preventDefault(); // Prevent default Link navigation immediately
+
+    // Manually set the hash to trigger the browser's scroll behavior.
+    // If already on the homepage with the #top-deals hash, this will force a re-scroll.
+    if (window.location.pathname === '/' && window.location.hash === '#top-deals') {
+      const targetElement = document.getElementById('top-deals');
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // If not on the homepage or not at the #top-deals hash, navigate and set hash
+      window.location.href = '/#top-deals';
+    }
+  };
+
 
   return (
     <nav className={navClasses}>
-      {/* Adjusted horizontal padding for desktop/larger screens, moderate for mobile */}
       <div className="container mx-auto flex justify-between items-center px-4 sm:px-8 lg:px-20">
-        {" "}
-        {/* Increased lg:px-12 to lg:px-20 */}
-        {/* Logo */}
-        <Link
-          to="/"
-          className="flex items-center" // Use flex to align image if needed
-          onClick={closeAllMenus}
-        >
+        <Link to="/" className="flex items-center" onClick={closeAllMenus}>
           <img
             src={LOGO_URL}
             alt="Discount Center Logo"
-            className="h-20 w-auto" // Increased height from h-16 to h-20 for much bigger logo
+            className="h-20 w-auto"
           />
         </Link>
-        {/* Mobile menu button */}
         <div className="md:hidden">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-[#796cf5] focus:outline-none hover:text-[#5c4ae0] transition duration-300" // Mobile menu icon is now lilac
+            className="text-[#796cf5] focus:outline-none hover:text-[#5c4ae0] transition duration-300"
           >
             <svg
               className="w-6 h-6"
@@ -98,29 +105,28 @@ const Navbar: React.FC = () => {
             </svg>
           </button>
         </div>
-        {/* Desktop Navigation Links */}
         <div className="hidden md:flex space-x-6 items-center">
           <NavLink
             to="/"
-            className={getNavLinkClasses} // Using NavLink for active styling
+            className={getNavLinkClasses}
             onClick={closeAllMenus}
-            end // Ensures exact match for "/"
+            end
           >
             Home
           </NavLink>
-          <NavLink
-            to="/today-deals"
-            className={getNavLinkClasses} // Using NavLink for active styling
-            onClick={closeAllMenus}
+          {/* Changed to Link for custom scroll handling */}
+          <Link
+            to="/#top-deals" // Retain for semantic meaning, but onClick handles navigation
+            className={getTodayDealsLinkClasses} // Use the specific class for this link
+            onClick={handleTodayDealsClick}
           >
             Today Deals
-          </NavLink>
+          </Link>
 
-          {/* Store Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsStoreDropdownOpen(!isStoreDropdownOpen)}
-              className="text-black hover:text-[#796cf5] transition duration-300 flex items-center focus:outline-none" // Text black, hover lilac
+              className="text-black hover:text-[#796cf5] transition duration-300 flex items-center focus:outline-none"
             >
               Store
               <svg
@@ -139,7 +145,6 @@ const Navbar: React.FC = () => {
               </svg>
             </button>
             {isStoreDropdownOpen && (
-              // Desktop Dropdown: semi-transparent white, subtle shadow, and blur
               <div className="absolute left-0 mt-2 w-48 bg-white/90 rounded-md shadow-lg py-1 z-20 backdrop-blur-sm">
                 {loadingStores ? (
                   <div className="px-4 py-2 text-gray-700">
@@ -157,7 +162,7 @@ const Navbar: React.FC = () => {
                       <Link
                         key={store._id as string}
                         to={`/stores/${store.slug}`}
-                        className="block px-4 py-2 text-black hover:bg-gray-100 hover:text-[#796cf5] transition duration-300" // Text black, hover lilac, subtle background
+                        className="block px-4 py-2 text-black hover:bg-gray-100 hover:text-[#796cf5] transition duration-300"
                         onClick={closeAllMenus}
                       >
                         {store.name}
@@ -165,8 +170,8 @@ const Navbar: React.FC = () => {
                     ))}
                     {/* See More Stores link */}
                     <Link
-                      to="/stores" // Assuming /stores lists all stores
-                      className="block px-4 py-2 text-[#796cf5] hover:bg-gray-100 hover:text-[#5c4ae0] transition duration-300 font-semibold border-t border-gray-200 mt-1 pt-2" // Changed text color to lilac, hover to darker lilac
+                      to="/stores" // Correctly directs to /stores
+                      className="block px-4 py-2 text-[#796cf5] hover:bg-gray-100 hover:text-[#5c4ae0] transition duration-300 font-semibold border-t border-gray-200 mt-1 pt-2"
                       onClick={closeAllMenus}
                     >
                       See More Stores
@@ -179,14 +184,14 @@ const Navbar: React.FC = () => {
 
           <NavLink
             to="/submit-store"
-            className={getNavLinkClasses} // Using NavLink for active styling
+            className={getNavLinkClasses}
             onClick={closeAllMenus}
           >
             Submit a store
           </NavLink>
           <NavLink
             to="/contact-us"
-            className={getNavLinkClasses} // Using NavLink for active styling
+            className={getNavLinkClasses}
             onClick={closeAllMenus}
           >
             Contact us
@@ -194,9 +199,7 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Menu (conditionally rendered) */}
       {isMobileMenuOpen && (
-        // Mobile menu: semi-transparent white, subtle shadow, and blur
         <div className="md:hidden mt-4 space-y-2 bg-white/90 p-4 rounded-md shadow-xl backdrop-blur-sm">
           <NavLink
             to="/"
@@ -206,27 +209,23 @@ const Navbar: React.FC = () => {
               } hover:text-[#796cf5] transition duration-300`
             }
             onClick={closeAllMenus}
-            end // Ensures exact match for "/"
+            end
           >
             Home
           </NavLink>
-          <NavLink
-            to="/today-deals"
-            className={({ isActive }) =>
-              `block py-2 ${
-                isActive ? "text-[#796cf5] font-semibold" : "text-black"
-              } hover:text-[#796cf5] transition duration-300`
-            }
-            onClick={closeAllMenus}
+          {/* Changed to Link for custom scroll handling in mobile menu */}
+          <Link
+            to="/#top-deals"
+            className="block py-2 text-black hover:text-[#796cf5] transition duration-300"
+            onClick={handleTodayDealsClick}
           >
             Today Deals
-          </NavLink>
+          </Link>
 
-          {/* Mobile Store Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsStoreDropdownOpen(!isStoreDropdownOpen)}
-              className="block text-black hover:text-[#796cf5] transition duration-300 py-2 w-full text-left" // Text black, hover lilac
+              className="block text-black hover:text-[#796cf5] transition duration-300 py-2 w-full text-left"
             >
               Store
               <svg
@@ -245,7 +244,6 @@ const Navbar: React.FC = () => {
               </svg>
             </button>
             {isStoreDropdownOpen && (
-              // Mobile Dropdown List: semi-transparent white, subtle shadow, and blur
               <div className="mt-2 space-y-1 bg-white/90 rounded-md shadow-inner py-1 z-20 backdrop-blur-sm">
                 {loadingStores ? (
                   <div className="px-4 py-2 text-gray-700">
@@ -263,7 +261,7 @@ const Navbar: React.FC = () => {
                       <Link
                         key={store._id as string}
                         to={`/stores/${store.slug}`}
-                        className="block px-4 py-2 text-black hover:bg-gray-100 hover:text-[#796cf5] transition duration-300" // Text black, hover lilac, subtle background
+                        className="block px-4 py-2 text-black hover:bg-gray-100 hover:text-[#796cf5] transition duration-300"
                         onClick={closeAllMenus}
                       >
                         {store.name}
@@ -271,8 +269,8 @@ const Navbar: React.FC = () => {
                     ))}
                     {/* See More Stores link */}
                     <Link
-                      to="/stores" // Assuming /stores lists all stores
-                      className="block px-4 py-2 text-[#796cf5] hover:bg-gray-100 hover:text-[#5c4ae0] transition duration-300 font-semibold border-t border-gray-200 mt-1 pt-2" // Changed text color to lilac, hover to darker lilac
+                      to="/stores" // Correctly directs to /stores
+                      className="block px-4 py-2 text-[#796cf5] hover:bg-gray-100 hover:text-[#5c4ae0] transition duration-300 font-semibold border-t border-gray-200 mt-1 pt-2"
                       onClick={closeAllMenus}
                     >
                       See More Stores

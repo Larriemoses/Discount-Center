@@ -19,7 +19,7 @@ interface IProduct {
   shopNowLink: string;
   usageCount: number;
   successRate: number;
-  todayUses: number; // This is the field we're targeting
+  todayUses: number;
   store: IStore;
   likes: number;
   dislikes: number;
@@ -36,7 +36,13 @@ interface IProductInteractionResponseData {
   dislikes: number;
 }
 
-const TopDealsSection: React.FC = () => {
+// Extend React.FC to accept a 'className' prop
+interface TopDealsSectionProps {
+  className?: string; // Add this line
+}
+
+const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
+  // Destructure className
   const [topDeals, setTopDeals] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +89,6 @@ const TopDealsSection: React.FC = () => {
       const today = getTodayDateString();
 
       if (lastForceResetDate !== today) {
-        // Check if force reset ran today
         console.log(
           "TopDealsSection: Performing one-time force reset of 'todayUses'."
         );
@@ -198,9 +203,13 @@ const TopDealsSection: React.FC = () => {
     showNotification("Feedback received.", "success");
   };
 
+  const STATIC_FILES_BASE_URL = "http://localhost:5000/uploads";
+  const PLACEHOLDER_LOGO_PATH = "/placeholder-logo.png";
+
   if (loading) {
     return (
-      <section className="container mx-auto px-4 py-8">
+      // Apply the className prop here, combined with other classes
+      <section className={`${className || ""} pb-12 container mx-auto px-4`}>
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">
           Top Deals
         </h2>
@@ -211,7 +220,8 @@ const TopDealsSection: React.FC = () => {
 
   if (error) {
     return (
-      <section className="container mx-auto px-4 py-8">
+      // Apply the className prop here
+      <section className={`${className || ""} pb-12 container mx-auto px-4`}>
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">
           Top Deals
         </h2>
@@ -222,7 +232,8 @@ const TopDealsSection: React.FC = () => {
 
   if (topDeals.length === 0) {
     return (
-      <section className="container mx-auto px-4 py-8">
+      // Apply the className prop here
+      <section className={`${className || ""} pb-12 container mx-auto px-4`}>
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">
           Top Deals
         </h2>
@@ -233,11 +244,13 @@ const TopDealsSection: React.FC = () => {
     );
   }
 
-  const STATIC_FILES_BASE_URL = "http://localhost:5000/uploads";
-  const PLACEHOLDER_LOGO_PATH = "/placeholder-logo.png";
-
   return (
-    <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 relative bg-[#ffffff]">
+    // Apply the className prop here to the main section
+    <section
+      className={`${
+        className || ""
+      } pb-12 relative bg-[#ffffff] container mx-auto px-4 sm:px-6 lg:px-8`}
+    >
       <h2 className="text-3xl md:text-4xl font-extrabold text-center text-gray-800 mb-10">
         Top Deals
       </h2>
@@ -245,7 +258,7 @@ const TopDealsSection: React.FC = () => {
       {notificationMessage && (
         <div
           className={`
-            fixed top-4 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium text-lg
+            fixed top-2 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium text-lg
             transition-all duration-300 ease-in-out transform
             ${notificationType === "success" ? "bg-green-500" : "bg-red-500"}
           `}
@@ -257,10 +270,11 @@ const TopDealsSection: React.FC = () => {
 
       <div className="flex flex-col items-center gap-8">
         {topDeals.map((deal) => {
-          const product = deal; // In TopDeals, 'deal' is already the product
-          const logoSrc = product.store.logo
-            ? `${STATIC_FILES_BASE_URL}/${product.store.logo}`
-            : PLACEHOLDER_LOGO_PATH;
+          const product = deal;
+          const logoSrc =
+            product.store?.logo && product.store.logo !== "no-photo.jpg"
+              ? `${STATIC_FILES_BASE_URL}/${product.store.logo}`
+              : PLACEHOLDER_LOGO_PATH;
 
           return (
             <div
@@ -268,7 +282,8 @@ const TopDealsSection: React.FC = () => {
               className="bg-white p-6 rounded-lg shadow-md border border-gray-200 flex flex-col w-full max-w-sm"
             >
               <div className="flex flex-col items-start mb-4">
-                {product.store.logo ? (
+                {product.store?.logo &&
+                product.store.logo !== "no-photo.jpg" ? (
                   <Link to={`/stores/${product.store.slug}`}>
                     <img
                       src={logoSrc}
@@ -291,7 +306,7 @@ const TopDealsSection: React.FC = () => {
                   </div>
                 )}
 
-                {product.store.topDealHeadline && (
+                {product.store?.topDealHeadline && (
                   <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">
                     {product.store.topDealHeadline}
                   </span>
@@ -303,7 +318,7 @@ const TopDealsSection: React.FC = () => {
               </h3>
 
               <div className="flex flex-col space-y-2 mb-4">
-                <div className="flex w-full items-center ">
+                <div className="flex w-full items-stretch">
                   <span className="flex-1 bg-[#6348db] text-[#f3f0fa] font-semibold rounded-l-md py-2 px-4 text-center truncate">
                     {product.code}
                   </span>

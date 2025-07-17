@@ -26,7 +26,8 @@ const AdminStoreListPage: React.FC = () => {
           Authorization: `Bearer ${adminToken}`,
         },
       });
-      setStores(response.data.data || response.data);
+      // Ensure we're accessing data.data as per your backend controller
+      setStores(response.data.data || []);
     } catch (err: any) {
       console.error("Failed to fetch stores:", err);
       setError(
@@ -73,21 +74,12 @@ const AdminStoreListPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 sm:p-8">
-      {" "}
-      {/* Added p-4 for smaller screens */}
       <div className="max-w-full lg:max-w-7xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-md">
-        {" "}
-        {/* Changed max-w-7xl to max-w-full and added responsive padding */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-          {" "}
-          {/* flex-col for mobile, flex-row for larger */}
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-0">
             Store Management
-          </h1>{" "}
-          {/* Responsive text size */}
+          </h1>
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-            {" "}
-            {/* Responsive buttons layout */}
             <Link
               to="/admin/dashboard"
               className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 text-center"
@@ -108,21 +100,23 @@ const AdminStoreListPage: React.FC = () => {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            {" "}
-            {/* This is key for table responsiveness */}
             <table className="min-w-full bg-white border border-gray-200">
               <thead>
                 <tr className="bg-gray-200 text-gray-600 uppercase text-xs sm:text-sm leading-normal">
-                  {" "}
-                  {/* Responsive text size for headers */}
-                  <th className="py-2 px-4 text-left">Logo</th>{" "}
-                  {/* Adjusted padding */}
+                  <th className="py-2 px-4 text-left">Logo</th>
                   <th className="py-2 px-4 text-left">Name</th>
+                  {/* --- NEW HEADERS START --- */}
+                  <th className="py-2 px-4 text-left hidden sm:table-cell">
+                    Top Headline
+                  </th>
+                  <th className="py-2 px-4 text-left hidden lg:table-cell">
+                    Tagline
+                  </th>
+                  {/* --- NEW HEADERS END --- */}
                   <th className="py-2 px-4 text-left">Description</th>
                   <th className="py-2 px-4 text-left hidden md:table-cell">
                     Slug
-                  </th>{" "}
-                  {/* Hide slug on small screens */}
+                  </th>
                   <th className="py-2 px-4 text-center">Actions</th>
                 </tr>
               </thead>
@@ -133,16 +127,12 @@ const AdminStoreListPage: React.FC = () => {
                     className="border-b border-gray-200 hover:bg-gray-100"
                   >
                     <td className="py-2 px-4 text-left">
-                      {" "}
-                      {/* Adjusted padding */}
                       {store.logo && store.logo !== "no-photo.jpg" ? (
                         <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded overflow-hidden">
-                          {" "}
-                          {/* Added wrapper div for consistent container */}
                           <img
                             src={`http://localhost:5000/uploads/${store.logo}`}
                             alt={store.name}
-                            className="w-full h-full object-cover" // Ensure image fills its new container, maintaining aspect ratio
+                            className="w-full h-full object-cover"
                           />
                         </div>
                       ) : (
@@ -154,15 +144,20 @@ const AdminStoreListPage: React.FC = () => {
                     <td className="py-2 px-4 text-left font-medium">
                       {store.name}
                     </td>
+                    {/* --- NEW CELLS START --- */}
+                    <td className="py-2 px-4 text-left hidden sm:table-cell max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap">
+                      {store.topDealHeadline || "N/A"}
+                    </td>
+                    <td className="py-2 px-4 text-left hidden lg:table-cell max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap">
+                      {store.tagline || "N/A"}
+                    </td>
+                    {/* --- NEW CELLS END --- */}
                     <td className="py-2 px-4 text-left max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap sm:max-w-xs">
-                      {" "}
-                      {/* Adjusted max-width for better mobile display */}
                       {store.description}
                     </td>
                     <td className="py-2 px-4 text-left hidden md:table-cell">
                       {store.slug}
-                    </td>{" "}
-                    {/* Hide slug on small screens */}
+                    </td>
                     <td className="py-2 px-4 text-center">
                       <div className="flex item-center justify-center">
                         <Link

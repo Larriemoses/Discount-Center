@@ -1,12 +1,12 @@
 // server/src/controllers/storeController.ts
 
-import { Request, Response, NextFunction } from "express"; // Import NextFunction
-import asyncHandler from "../middleware/asyncHandler"; // Assuming this path and structure
+import { Request, Response, NextFunction } from "express";
+import asyncHandler from "../middleware/asyncHandler";
 import Store, { IStore } from "../models/Store";
 import slugify from "slugify";
 import path from "path";
 import fs from "fs";
-import ErrorResponse from "../utils/errorResponse"; // Import ErrorResponse
+import ErrorResponse from "../utils/errorResponse";
 
 // Extend Request type for Multer's file and auth middleware's user
 interface CustomRequest extends Request {
@@ -16,14 +16,10 @@ interface CustomRequest extends Request {
 
 // Helper function to delete files
 const deleteFile = (filePath: string) => {
-  // Normalize the filePath: remove any leading '/uploads/' if present
-  // This makes the function robust even if the database still contains '/uploads/filename.ext'
   const normalizedFilePath = filePath.startsWith("/uploads/")
     ? filePath.substring("/uploads/".length)
     : filePath;
 
-  // Construct the full absolute path to the actual uploads directory
-  // Assuming 'uploads' is directly under 'server'
   const fullPath = path.join(
     __dirname,
     "..",
@@ -104,11 +100,9 @@ export const getStoreBySlug = asyncHandler(
  */
 export const getPublicStores = asyncHandler(
   async (req: Request, res: Response) => {
-    // Only fetch active stores and select necessary fields for public display
-    // Assuming 'isActive' field exists in IStore or you want all stores by default
     const stores = await Store.find({
       /* isActive: true */
-    }).select("_id name slug logo"); // Removed isActive:true for now, add if you have that field
+    }).select("_id name slug logo");
     res.status(200).json({ success: true, count: stores.length, data: stores });
   }
 );
@@ -120,13 +114,14 @@ export const getPublicStores = asyncHandler(
  */
 export const createStore = asyncHandler(
   async (req: CustomRequest, res: Response, next: NextFunction) => {
-    const { name, description } = req.body;
+    // ***************************************************************
+    // >>>>>>>>>> UPDATED: Destructure topDealHeadline and tagline <<<<<<<<<<
+    // ***************************************************************
+    const { name, description, topDealHeadline, tagline } = req.body;
     let { slug } = req.body;
 
-    // Basic validation
     if (!name || !description) {
       if (req.file) {
-        // Delete file using only filename
         deleteFile(req.file.filename);
       }
       return next(
@@ -137,18 +132,15 @@ export const createStore = asyncHandler(
       );
     }
 
-    // Generate slug if not provided or empty
     if (!slug) {
       slug = slugify(name, { lower: true, strict: true });
     } else {
       slug = slugify(slug, { lower: true, strict: true });
     }
 
-    // Check if slug already exists
     const existingStore = await Store.findOne({ slug });
     if (existingStore) {
       if (req.file) {
-        // Delete file using only filename
         deleteFile(req.file.filename);
       }
       return next(
@@ -159,17 +151,16 @@ export const createStore = asyncHandler(
       );
     }
 
-    // Handle logo upload
-    // Store ONLY the filename in the database
     const logoFilename = req.file ? req.file.filename : "no-photo.jpg";
 
     const newStore: IStore = new Store({
       name,
       description,
       slug,
-      logo: logoFilename, // Assign the filename directly
-      user: (req as any).user?._id, // Assuming user ID is available from auth middleware
-      // Add other default fields like isActive: true, etc., if they exist in your model
+      logo: logoFilename,
+      topDealHeadline: topDealHeadline || undefined, // Assign new field, use undefined if empty
+      tagline: tagline || undefined, // Assign new field, use undefined if empty
+      user: (req as any).user?._id,
     });
 
     const createdStore = await newStore.save();
@@ -184,15 +175,17 @@ export const createStore = asyncHandler(
  */
 export const updateStore = asyncHandler(
   async (req: CustomRequest, res: Response, next: NextFunction) => {
-    const { name, description } = req.body;
+    // ***************************************************************
+    // >>>>>>>>>> UPDATED: Destructure topDealHeadline and tagline <<<<<<<<<<
+    // ***************************************************************
+    const { name, description, topDealHeadline, tagline } = req.body;
     let { slug } = req.body;
     const storeId = req.params.id;
 
-    let store = (await Store.findById(storeId)) as IStore | null; // Cast to IStore | null
+    let store = (await Store.findById(storeId)) as IStore | null;
 
     if (!store) {
       if (req.file) {
-        // Delete file using only filename
         deleteFile(req.file.filename);
       }
       return next(new ErrorResponse("Store not found", 404));
@@ -202,6 +195,13 @@ export const updateStore = asyncHandler(
     store.name = name !== undefined ? name : store.name;
     store.description =
       description !== undefined ? description : store.description;
+
+    // ***************************************************************
+    // >>>>>>>>>> UPDATED: Update topDealHeadline and tagline fields <<<<<<<<<<
+    // ***************************************************************
+    store.topDealHeadline =
+      topDealHeadline !== undefined ? topDealHeadline : store.topDealHeadline;
+    store.tagline = tagline !== undefined ? tagline : store.tagline;
 
     // Handle slug update (only if changed and unique)
     if (slug !== undefined) {
@@ -213,7 +213,6 @@ export const updateStore = asyncHandler(
         });
         if (existingStoreWithSameSlug) {
           if (req.file) {
-            // Delete file using only filename
             deleteFile(req.file.filename);
           }
           return next(
@@ -224,27 +223,16 @@ export const updateStore = asyncHandler(
           );
         }
       }
-      store.slug = newSlug; // Assign the potentially updated slug
+      store.slug = newSlug;
     }
 
     // Handle logo update
     if (req.file) {
-      // New logo uploaded, delete old one if it's not 'no-photo.jpg'
       if (store.logo && store.logo !== "no-photo.jpg") {
-        // Delete old file using the filename stored in DB
         deleteFile(store.logo);
       }
-      // Assign the new logo filename directly
       store.logo = req.file.filename;
     }
-    // If no new file, and no explicit 'clearLogo' flag (which you don't have yet),
-    // the existing 'store.logo' remains untouched.
-
-    // Optional: If you want to allow clearing the logo explicitly
-    // if (req.body.clearLogo === true && store.logo && store.logo !== 'no-photo.jpg') {
-    //   deleteFile(store.logo);
-    //   store.logo = 'no-photo.jpg';
-    // }
 
     const updatedStore = await store.save();
     res.status(200).json({ success: true, data: updatedStore });
@@ -259,15 +247,13 @@ export const updateStore = asyncHandler(
 export const deleteStore = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const storeId = req.params.id;
-    const store = (await Store.findById(storeId)) as IStore | null; // Cast to IStore | null
+    const store = (await Store.findById(storeId)) as IStore | null;
 
     if (!store) {
       return next(new ErrorResponse("Store not found", 404));
     }
 
-    // Delete associated logo file from the file system if it's not the default
     if (store.logo && store.logo !== "no-photo.jpg") {
-      // Delete file using the filename stored in DB
       deleteFile(store.logo);
     }
 
