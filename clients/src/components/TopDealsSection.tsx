@@ -21,8 +21,8 @@ interface IProduct {
   successRate: number;
   todayUses: number;
   store: IStore;
-  likes: number;
-  dislikes: number;
+  likes: number; // Still in interface, but not used in UI
+  dislikes: number; // Still in interface, but not used in UI
   discountType?: string;
   discountValue?: number;
 }
@@ -118,7 +118,7 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
 
   const handleInteraction = async (
     productId: string,
-    action: "copy" | "shop" | "like" | "dislike"
+    action: "copy" | "shop" // Removed 'like' | 'dislike'
   ) => {
     console.log(
       `Frontend: Attempting interaction for product ID: ${productId}, action: ${action}`
@@ -145,8 +145,8 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
                   usageCount: updatedData.totalUses,
                   todayUses: updatedData.todayUses,
                   successRate: updatedData.successRate,
-                  likes: updatedData.likes,
-                  dislikes: updatedData.dislikes,
+                  likes: updatedData.likes, // Still update if backend sends, but not displayed
+                  dislikes: updatedData.dislikes, // Still update if backend sends, but not displayed
                 }
               : deal
           );
@@ -193,15 +193,7 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
     showNotification("Redirecting to store...", "success");
   };
 
-  const handleLike = (dealId: string) => {
-    handleInteraction(dealId, "like");
-    showNotification("Thanks for the feedback!", "success");
-  };
-
-  const handleDislike = (dealId: string) => {
-    handleInteraction(dealId, "dislike");
-    showNotification("Feedback received.", "success");
-  };
+  // Removed handleLike and handleDislike functions
 
   const STATIC_FILES_BASE_URL = "http://localhost:5000/uploads";
   const PLACEHOLDER_LOGO_PATH = "/placeholder-logo.png";
@@ -268,7 +260,7 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
         </div>
       )}
 
-      <div className="flex flex-col items-center gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-items-center">
         {topDeals.map((deal) => {
           const product = deal;
           const logoSrc =
@@ -340,35 +332,10 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
                 </button>
               </div>
 
-              <div className="flex items-center justify-between text-gray-600 text-sm mt-auto">
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handleLike(product._id)}
-                    className="flex items-center p-1 rounded-full hover:bg-gray-100 transition-colors"
-                  >
-                    <svg
-                      className="w-4 h-4 text-gray-500"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43c0 .542.138 1.05.385 1.5l1.026 1.708a1.659 1.659 0 00.999.688 1.47 1.47 0 00.702 0h2.909c1.028 0 1.872-.844 1.872-1.872V12c0-1.028.844-1.872 1.872-1.872h.068a1.873 1.873 0 001.872-1.873c0-1.027-.845-1.872-1.872-1.872h-1.874a1.873 1.873 0 00-1.872-1.873V5.592c-.023-.393-.197-.775-.494-1.071l-1.472-1.472A1.873 1.873 0 007.828 2H5.092c-.393.023-.775.197-1.071.494L2.549 3.967A1.873 1.873 0 002 5.092v5.241z"></path>
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => handleDislike(product._id)}
-                    className="flex items-center p-1 rounded-full hover:bg-gray-100 transition-colors"
-                  >
-                    <svg
-                      className="w-4 h-4 text-gray-500"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667V4.237c0-.542-.138-1.05-.385-1.5l-1.026-1.708A1.659 1.659 0 0011.59 0a1.47 1.47 0 00-.702 0H7.979c-1.028 0-1.872.844-1.872 1.872V8c0 1.028-.844 1.872-1.872 1.872h-.068A1.873 1.873 0 000 11.745c0 1.027.845 1.872 1.872 1.872h1.874a1.873 1.873 0 001.872 1.873v.812c.023.393.197.775.494 1.071l1.472 1.472A1.873 1.873 0 0012.172 18h2.736c.393-.023.775-.197 1.071-.494l1.472-1.472A1.873 1.873 0 0018 14.908v-5.241z"></path>
-                    </svg>
-                  </button>
-                </div>
+              <div className="flex items-center justify-end text-gray-600 text-sm mt-auto">
+                {" "}
+                {/* Changed justify-between to justify-end */}
+                {/* Removed Like/Dislike Buttons */}
                 <div className="flex items-center space-x-2 text-gray-600">
                   <span className="font-semibold text-green-700">
                     {product.successRate}% SUCCESS

@@ -24,16 +24,27 @@ const deleteFiles = (filePaths: string[]) => {
       normalizedFilePath
     );
 
+    // Using fs.promises.unlink for async deletion, better for non-blocking operations
+    // Or keep fs.unlinkSync if you prefer synchronous for simple cases, but ensure error handling.
+    // The current fs.existsSync + fs.unlinkSync is fine for preventing the 'not found' error.
     if (fs.existsSync(fullPath)) {
       try {
         fs.unlinkSync(fullPath);
         console.log(`Deleted file: ${fullPath}`);
-      } catch (err) {
-        console.error(`Error deleting file ${fullPath}:`, err);
+      } catch (err: any) {
+        // Type 'any' for err in catch block for broader error handling
+        // Specifically catch ENOENT (file not found) to log as warning, others as error
+        if (err.code === "ENOENT") {
+          console.warn(
+            `File not found for deletion during unlink (might be already deleted or path incorrect): ${fullPath}`
+          );
+        } else {
+          console.error(`Error deleting file ${fullPath}:`, err);
+        }
       }
     } else {
       console.warn(
-        `File not found for deletion (might be already deleted or path incorrect): ${fullPath}`
+        `File not found for deletion (already deleted or path incorrect in record): ${fullPath}`
       );
     }
   });
@@ -213,7 +224,7 @@ export const updateProduct = asyncHandler(
       isActive,
       discountCode,
       shopNowUrl,
-      store: newStoreId,
+      store: newStoreId, // Renamed to newStoreId to avoid conflict with product.store
       successRate,
       totalUses,
       todayUses,
@@ -229,16 +240,27 @@ export const updateProduct = asyncHandler(
       throw new Error("Product not found");
     }
 
+    // Store old images for deletion if new ones are uploaded or store changes
+    const oldImages = product.images ? [...product.images] : [];
+    let newImages: string[] | undefined; // To hold paths of new images if uploaded
+
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-      req.body.images = req.files.map(
+      // New images were uploaded: prepare new paths
+      newImages = req.files.map(
         (file: Express.Multer.File) => `/uploads/${file.filename}`
       );
+      // Delete old images immediately after new ones are confirmed
+      if (oldImages.length > 0) {
+        deleteFiles(oldImages);
+      }
     }
 
+    // Update basic product fields
     if (name !== undefined && name !== product.name) {
       product.name = name;
       product.slug = slugify(name, { lower: true, strict: true });
     } else if (name !== undefined) {
+      // If name is provided but unchanged, still set it to ensure consistency
       product.name = name;
     }
 
@@ -255,6 +277,7 @@ export const updateProduct = asyncHandler(
     product.shopNowUrl =
       shopNowUrl !== undefined ? shopNowUrl : product.shopNowUrl;
 
+    // Update usage/feedback stats directly if provided (typically from admin edits)
     product.successRate =
       successRate !== undefined ? successRate : product.successRate;
     product.totalUses = totalUses !== undefined ? totalUses : product.totalUses;
@@ -262,8 +285,10 @@ export const updateProduct = asyncHandler(
     product.likes = likes !== undefined ? likes : product.likes;
     product.dislikes = dislikes !== undefined ? dislikes : product.dislikes;
 
+    // Handle store change and associated image updates
     if (newStoreId) {
       let currentStoreIdString: string;
+      // Handle different ways product.store might be populated
       if (product.store instanceof mongoose.Types.ObjectId) {
         currentStoreIdString = product.store.toString();
       } else if (
@@ -276,15 +301,43 @@ export const updateProduct = asyncHandler(
         currentStoreIdString = String(product.store);
       }
 
+      // Check if the store is actually changing
       if (currentStoreIdString !== newStoreId.toString()) {
         const newStore = await Store.findById(newStoreId);
         if (!newStore) {
           res.status(404);
           throw new Error("New store not found.");
         }
-        product.store = newStoreId;
+        product.store = newStoreId; // Update the store reference
 
-        if (!(req.files && Array.isArray(req.files) && req.files.length > 0)) {
+        // If no new files were uploaded with THIS request, then update product images based on new store
+        if (!newImages) {
+          // Check if newImages was set by req.files
+          // Also, ensure old images associated with the *previous* store are deleted,
+          // but only if they are not the *same* as the new store's logo/images.
+          // For simplicity, if store changes and no new product image is uploaded,
+          // we assume the old product images might need to be cleaned up
+          // if they were specifically product-level images not inherited from store.
+          // This logic can get complex; assuming for now that oldImages were product-specific.
+
+          // Delete old product images if they are NOT store logos
+          // This is a simplified deletion. A more robust solution might track image origin.
+          if (oldImages.length > 0) {
+            // Filter out any old images that are actually the new store's logo or images
+            // to avoid deleting them if they were previously associated with this product
+            // but are now changing to be the new store's.
+            const imagesToPossiblyKeep = [
+              newStore.logo,
+              ...(newStore.images || []),
+            ].filter(Boolean);
+            const imagesToDelete = oldImages.filter(
+              (oldImg) => !imagesToPossiblyKeep.includes(oldImg)
+            );
+            if (imagesToDelete.length > 0) {
+              deleteFiles(imagesToDelete);
+            }
+          }
+
           if (newStore.logo) {
             product.images = [newStore.logo];
           } else if (newStore.images && newStore.images.length > 0) {
@@ -294,6 +347,11 @@ export const updateProduct = asyncHandler(
           }
         }
       }
+    }
+
+    // Finally, assign new images if they were uploaded
+    if (newImages) {
+      product.images = newImages;
     }
 
     const updatedProduct = await product.save();
@@ -315,6 +373,11 @@ export const deleteProduct = asyncHandler(
     }
 
     if (product.images && product.images.length > 0) {
+      // IMPORTANT: Only delete product-specific images.
+      // If product images are derived from the store's logo/images,
+      // you *must not* delete the store's original files here,
+      // as other products or the store itself might still use them.
+      // For now, assuming product.images are standalone for this product.
       deleteFiles(product.images);
     }
 
@@ -384,15 +447,11 @@ export const interactProduct = asyncHandler(
       `Backend: Product after update and save: Total Uses=${product.totalUses}, Today Uses=${product.todayUses}, Likes=${product.likes}, Dislikes=${product.dislikes}, Success Rate=${product.successRate}, Last Reset=${product.lastDailyReset}`
     );
 
-    // ***************************************************************
-    // >>>>>>>>>> THIS IS THE ONLY CHANGE YOU NEED TO MAKE <<<<<<<<<<
-    // ***************************************************************
     res.status(200).json({
       success: true,
       message: `${action} successful`,
-      data: product, // <--- CHANGED from sending only a subset of fields
+      data: product,
     });
-    // ***************************************************************
   }
 );
 

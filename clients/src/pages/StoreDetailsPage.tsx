@@ -252,7 +252,7 @@ const StoreDetailsPage: React.FC = () => {
               <div
                 key={product._id.toString()}
                 className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden
-                         w-full max-w-md p-4 flex flex-col"
+                          w-full max-w-md p-4 flex flex-col"
               >
                 <div>
                   <div className="flex items-center mb-3">
@@ -353,36 +353,60 @@ const StoreDetailsPage: React.FC = () => {
           </p>
         )}
 
+        {/* EFFORTLESS SAVINGS SECTION - REVISED */}
+        <div className="mt-12 pt-6 border-t border-gray-200 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+            Effortless Savings
+          </h2>
+          <p className="text-xl sm:text-2xl font-semibold text-gray-700 mb-6">
+            Start Here
+          </p>
+          <p className="text-base sm:text-lg text-gray-700 leading-relaxed max-w-3xl mx-auto">
+            We've sourced the best working Oraimo discount code to help you save
+            on your favorite gadgets and accessories. Whether you're grabbing a
+            new power bank, earbuds, or smart appliance, this code is all you
+            need to shop smarter and pay less no stress, just real savings.
+          </p>
+        </div>
+        {/* END EFFORTLESS SAVINGS SECTION */}
+
         {/* How to Use Your Discount Code Section - Only renders if store.mainUrl exists */}
         {store.mainUrl ? (
-          <div className="mt-12 pt-6 border-t border-gray-200 text-left">
+          <div className="mt-12 pt-6 border-t border-gray-200">
+            {" "}
+            {/* Removed text-left from parent to control alignment on children */}
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 text-center">
               How to Use Your {store.name} Discount Code
             </h2>
-            <p className="text-base sm:text-lg text-gray-700 leading-relaxed mb-6">
+            <p className="text-base sm:text-lg text-gray-700 leading-relaxed mb-6 max-w-3xl mx-auto">
+              {" "}
+              {/* Added mx-auto for centering on larger screens */}
               Save big on your favorite {store.name} products with our exclusive
               discount codes. Follow these simple steps to redeem your code:
             </p>
-            <ul className="list-disc pl-5 space-y-3 text-gray-700 text-base sm:text-lg">
+            <ul className="list-disc pl-5 space-y-3 text-gray-700 text-base sm:text-lg max-w-3xl mx-auto">
+              {" "}
+              {/* Added mx-auto for centering on larger screens */}
               <li>
                 Visit the{" "}
                 <a
                   href={getFullUrl(store.mainUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline cursor-pointer"
+                  className="text-red-600 hover:underline cursor-pointer"
                 >
                   {store.name} Store
                 </a>
               </li>
               <li>
+                Click here to shop directly on the official {}
                 <a
                   href={getFullUrl(store.mainUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline cursor-pointer"
+                  className="text-red-600 hover:underline cursor-pointer"
                 >
-                  Click here to shop directly on the official {store.name} store
+                  {store.name} store
                 </a>
                 .
               </li>
@@ -405,7 +429,9 @@ const StoreDetailsPage: React.FC = () => {
                 Purchase.
               </li>
             </ul>
-            <p className="text-green-600 font-semibold mt-6 text-center">
+            <p className="text-green-600 font-semibold mt-6 text-center text-base sm:text-lg">
+              {" "}
+              {/* Reduced font size here */}
               Congratulations! You've successfully used an {store.name} discount
               code.
             </p>
@@ -421,12 +447,16 @@ const StoreDetailsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Best Deals Section */}
-        <div className="mt-12 pt-6 border-t border-gray-200 text-left">
+        {/* Best Deals Section - REVISED */}
+        <div className="mt-12 pt-6 border-t border-gray-200">
+          {" "}
+          {/* Removed text-left from parent */}
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 text-center">
             Best {store.name} Deals
           </h2>
-          <ul className="list-disc pl-5 space-y-3 text-gray-700 text-base sm:text-lg">
+          <ul className="list-disc pl-5 space-y-3 text-gray-700 text-base sm:text-lg max-w-3xl mx-auto">
+            {" "}
+            {/* Added mx-auto for centering on larger screens */}
             <li>
               Sign up for an {store.name} account to earn up to 600 reward
               points instantly and up to 1000 points with purchases. Redeem
@@ -442,62 +472,84 @@ const StoreDetailsPage: React.FC = () => {
               savings.
             </li>
           </ul>
-          <p className="text-base sm:text-lg text-gray-700 leading-relaxed mt-6 text-center">
+          <p className="text-base sm:text-lg text-gray-700 leading-relaxed mt-6 text-center max-w-3xl mx-auto">
+            {" "}
+            {/* Added mx-auto for centering on larger screens */}
             Start saving today and enjoy top quality {store.name} accessories at
             unbeatable prices!
           </p>
         </div>
 
-        {/* Contact Customer Care Section */}
-        <div className="mt-12 pt-6 border-t border-gray-200 text-left">
+        {/* Contact Customer Care Section - REVISED */}
+        <div className="mt-12 pt-6 border-t border-gray-200">
+          {" "}
+          {/* Removed text-left from parent */}
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 text-center">
             Need Help? Here's How to Contact {store.name} Customer Care
           </h2>
-          <p className="text-base sm:text-lg text-gray-700 leading-relaxed mb-6 text-center">
+          <p className="text-base sm:text-lg text-gray-700 leading-relaxed mb-6 text-center max-w-3xl mx-auto">
+            {" "}
+            {/* Added mx-auto for centering on larger screens */}
             If you have questions or need support, you can easily reach{" "}
             {store.name} through any of these channels:
           </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center mt-6 max-w-4xl mx-auto">
+            {" "}
+            {/* Ensured grid is max-width and centered */}
             {/* Phone Support */}
             <div className="bg-gray-50 p-6 rounded-lg shadow-sm flex flex-col items-center">
               <h3 className="font-semibold text-lg text-gray-800 mb-2">
                 Phone Support
               </h3>
-              <p className="text-gray-700 break-words">
+              <p className="text-gray-700 break-words text-base">
+                {" "}
+                {/* Adjusted font size */}
                 +234 818 135 3103 (First Choice)
               </p>
-              <p className="text-gray-700 break-words">+234 809 604 0753</p>
+              <p className="text-gray-700 break-words text-base">
+                +234 809 604 0753
+              </p>{" "}
+              {/* Adjusted font size */}
             </div>
-
             {/* Whatsapp Support */}
             <div className="bg-gray-50 p-6 rounded-lg shadow-sm flex flex-col items-center">
               <h3 className="font-semibold text-lg text-gray-800 mb-2">
                 Whatsapp Support
               </h3>
-              <p className="text-gray-700">Chat with a rep:</p>
-              <p className="text-gray-700 break-words">+234 916 459 8060</p>
-              <p className="text-gray-700 break-words">+234 818 642 3337</p>
+              <p className="text-gray-700 text-base">Chat with a rep:</p>{" "}
+              {/* Adjusted font size */}
+              <p className="text-gray-700 break-words text-base">
+                +234 916 459 8060
+              </p>{" "}
+              {/* Adjusted font size */}
+              <p className="text-gray-700 break-words text-base">
+                +234 818 642 3337
+              </p>{" "}
+              {/* Adjusted font size */}
             </div>
-
             {/* Email Support */}
             <div className="bg-gray-50 p-6 rounded-lg shadow-sm flex flex-col items-center">
               <h3 className="font-semibold text-lg text-gray-800 mb-2">
                 Email Support
               </h3>
-              <p className="text-gray-700">
+              <p className="text-gray-700 text-base">
+                {" "}
+                {/* Adjusted font size */}
                 Send a message to: care.ng@oraimo.com
               </p>
-              <p className="text-gray-700 break-words">
+              <p className="text-gray-700 break-words text-base">
+                {" "}
+                {/* Adjusted font size */}
                 deliveryissue.ng@oraimo.com (First Choice for Logistics Issue)
               </p>
             </div>
           </div>
-
           {/* Social Media Buttons - CRITICAL FIX HERE */}
-          <div className="flex flex-wrap justify-center gap-4 mt-8">
+          <div className="flex flex-wrap justify-center gap-4 mt-8 max-w-4xl mx-auto">
+            {" "}
+            {/* Ensured buttons container is max-width and centered */}
             {/* Facebook Link */}
-            {formattedStoreName && ( // Ensure formattedStoreName is not empty
+            {formattedStoreName && (
               <a
                 href={`https://www.facebook.com/${formattedStoreName}nigeria`}
                 target="_blank"
@@ -517,7 +569,7 @@ const StoreDetailsPage: React.FC = () => {
               </a>
             )}
             {/* Twitter Link */}
-            {formattedStoreName && ( // Ensure formattedStoreName is not empty
+            {formattedStoreName && (
               <a
                 href={`https://twitter.com/${formattedStoreName}nigeria`}
                 target="_blank"
@@ -537,7 +589,7 @@ const StoreDetailsPage: React.FC = () => {
               </a>
             )}
             {/* Instagram Link */}
-            {formattedStoreName && ( // Ensure formattedStoreName is not empty
+            {formattedStoreName && (
               <a
                 href={`https://www.instagram.com/${formattedStoreName}nigeria`}
                 target="_blank"
@@ -551,7 +603,7 @@ const StoreDetailsPage: React.FC = () => {
                   viewBox="0 0 24 24"
                   fill="currentColor"
                 >
-                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.07 1.645.07 4.85s-.012 3.584-.07 4.85c-.149 3.225-1.664 4.771-4.919 4.919-.058 1.265-.07-1.644-.07-4.85s.012-3.584.07-4.85c.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.073 4.948.073s3.668-.014 4.948-.072c4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.798-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.202-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.44-.645 1.44-1.44s-.645-1.44-1.44-1.44z" />
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.07 1.645.07 4.85s-.012 3.584-.07 4.85c-.149 3.225-1.664 4.771-4.919 4.919-.058 1.265-.07-1.644-.07-4.85s.012-3.584.07-4.85c.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.073 4.948.073s3.668-.014 4.948-.072c4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM12 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.798-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.202-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.44-.645 1.44-1.44s-.645-1.44-1.44-1.44z" />
                 </svg>
                 <span>Instagram</span>
               </a>

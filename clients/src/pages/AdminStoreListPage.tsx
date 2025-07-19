@@ -1,9 +1,7 @@
-// client/src/pages/AdminStoreListPage.tsx
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import type { IStore } from "../../../server/src/models/Store";
+import type { IStore } from "../../../server/src/models/Store"; // Assuming this path is correct
 
 const AdminStoreListPage: React.FC = () => {
   const [stores, setStores] = useState<IStore[]>([]);
@@ -26,7 +24,6 @@ const AdminStoreListPage: React.FC = () => {
           Authorization: `Bearer ${adminToken}`,
         },
       });
-      // Ensure we're accessing data.data as per your backend controller
       setStores(response.data.data || []);
     } catch (err: any) {
       console.error("Failed to fetch stores:", err);
@@ -99,110 +96,185 @@ const AdminStoreListPage: React.FC = () => {
             No stores found. Add a new one!
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200">
-              <thead>
-                <tr className="bg-gray-200 text-gray-600 uppercase text-xs sm:text-sm leading-normal">
-                  <th className="py-2 px-4 text-left">Logo</th>
-                  <th className="py-2 px-4 text-left">Name</th>
-                  {/* --- NEW HEADERS START --- */}
-                  <th className="py-2 px-4 text-left hidden sm:table-cell">
-                    Top Headline
-                  </th>
-                  <th className="py-2 px-4 text-left hidden lg:table-cell">
-                    Tagline
-                  </th>
-                  {/* --- NEW HEADERS END --- */}
-                  <th className="py-2 px-4 text-left">Description</th>
-                  <th className="py-2 px-4 text-left hidden md:table-cell">
-                    Slug
-                  </th>
-                  <th className="py-2 px-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="text-gray-700 text-sm font-light">
-                {stores.map((store) => (
-                  <tr
-                    key={store._id as string}
-                    className="border-b border-gray-200 hover:bg-gray-100"
-                  >
-                    <td className="py-2 px-4 text-left">
-                      {store.logo && store.logo !== "no-photo.jpg" ? (
-                        <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded overflow-hidden">
-                          <img
-                            src={`http://localhost:5000/uploads/${store.logo}`}
-                            alt={store.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded text-xs text-gray-400">
-                          No Logo
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-2 px-4 text-left font-medium">
-                      {store.name}
-                    </td>
-                    {/* --- NEW CELLS START --- */}
-                    <td className="py-2 px-4 text-left hidden sm:table-cell max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap">
-                      {store.topDealHeadline || "N/A"}
-                    </td>
-                    <td className="py-2 px-4 text-left hidden lg:table-cell max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap">
-                      {store.tagline || "N/A"}
-                    </td>
-                    {/* --- NEW CELLS END --- */}
-                    <td className="py-2 px-4 text-left max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap sm:max-w-xs">
-                      {store.description}
-                    </td>
-                    <td className="py-2 px-4 text-left hidden md:table-cell">
-                      {store.slug}
-                    </td>
-                    <td className="py-2 px-4 text-center">
-                      <div className="flex item-center justify-center">
-                        <Link
-                          to={`/admin/stores/edit/${store._id}`}
-                          className="w-4 mr-2 transform hover:text-purple-500 hover:scale-110"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L7.5 21H3v-4.5L15.232 5.232z"
-                            />
-                          </svg>
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(store._id as string)}
-                          className="w-4 mr-2 transform hover:text-red-500 hover:scale-110"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
+          <>
+            {/* Mobile Card View (hidden on large screens and up) */}
+            <div className="lg:hidden grid gap-4 grid-cols-1 sm:grid-cols-2">
+              {stores.map((store) => (
+                <div
+                  key={store._id as string}
+                  className="bg-white border border-gray-200 rounded-lg shadow-sm p-4"
+                >
+                  <div className="flex items-center mb-4">
+                    {store.logo && store.logo !== "no-photo.jpg" ? (
+                      <div className="w-16 h-16 mr-4 flex-shrink-0 bg-gray-200 flex items-center justify-center rounded overflow-hidden">
+                        <img
+                          src={`http://localhost:5000/uploads/${store.logo}`}
+                          alt={store.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                    </td>
+                    ) : (
+                      <div className="w-16 h-16 mr-4 flex-shrink-0 bg-gray-200 flex items-center justify-center rounded text-xs text-gray-400">
+                        No Logo
+                      </div>
+                    )}
+                    <h3 className="text-lg font-bold text-gray-800 break-words flex-grow">
+                      {store.name}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-semibold">Headline:</span>{" "}
+                    {store.topDealHeadline || "N/A"}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-semibold">Tagline:</span>{" "}
+                    {store.tagline || "N/A"}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-2">
+                    <span className="font-semibold">Description:</span>{" "}
+                    {store.description}
+                  </p>
+                  <p className="text-sm text-gray-500 mb-4">
+                    <span className="font-semibold">Slug:</span> {store.slug}
+                  </p>
+                  <div className="flex justify-end space-x-2 mt-auto">
+                    <Link
+                      to={`/admin/stores/edit/${store._id}`}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5" // Apply size directly to SVG
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L7.5 21H3v-4.5L15.232 5.232z"
+                        />
+                      </svg>
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(store._id as string)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5" // Apply size directly to SVG
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View (hidden on screens smaller than large) */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="min-w-full bg-white border border-gray-200">
+                <thead>
+                  <tr className="bg-gray-200 text-gray-600 uppercase text-xs sm:text-sm leading-normal">
+                    <th className="py-2 px-4 text-left">Logo</th>
+                    <th className="py-2 px-4 text-left">Name</th>
+                    <th className="py-2 px-4 text-left">Top Headline</th>
+                    <th className="py-2 px-4 text-left">Tagline</th>
+                    <th className="py-2 px-4 text-left">Description</th>
+                    <th className="py-2 px-4 text-left">Slug</th>
+                    <th className="py-2 px-4 text-center">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="text-gray-700 text-sm font-light">
+                  {stores.map((store) => (
+                    <tr
+                      key={store._id as string}
+                      className="border-b border-gray-200 hover:bg-gray-100"
+                    >
+                      <td className="py-2 px-4 text-left">
+                        {store.logo && store.logo !== "no-photo.jpg" ? (
+                          <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded overflow-hidden">
+                            <img
+                              src={`http://localhost:5000/uploads/${store.logo}`}
+                              alt={store.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded text-xs text-gray-400">
+                            No Logo
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-2 px-4 text-left font-medium">
+                        {store.name}
+                      </td>
+                      <td className="py-2 px-4 text-left max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap">
+                        {store.topDealHeadline || "N/A"}
+                      </td>
+                      <td className="py-2 px-4 text-left max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap">
+                        {store.tagline || "N/A"}
+                      </td>
+                      <td className="py-2 px-4 text-left max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap">
+                        {store.description}
+                      </td>
+                      <td className="py-2 px-4 text-left">{store.slug}</td>
+                      <td className="py-2 px-4 text-center">
+                        <div className="flex item-center justify-center">
+                          <Link
+                            to={`/admin/stores/edit/${store._id}`}
+                            className="w-4 mr-2 transform hover:text-purple-500 hover:scale-110"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L7.5 21H3v-4.5L15.232 5.232z"
+                              />
+                            </svg>
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(store._id as string)}
+                            className="w-4 mr-2 transform hover:text-red-500 hover:scale-110"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
