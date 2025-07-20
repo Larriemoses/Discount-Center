@@ -45,7 +45,11 @@ const HomePage: React.FC = () => {
         </div>
       </div>
       {/* TopDealsSection wrapped in a div with id and ref for scrolling */}
-      <div id="top-deals" ref={topDealsRef} className="mt-8 sm:mt-12">
+      <div
+        id="top-deals"
+        ref={topDealsRef}
+        className="mt-8 sm:mt-12 justify-center"
+      >
         <TopDealsSection />
       </div>
       {/* New WhyChooseUsSection, placed after TopDealsSection with its own top margin */}

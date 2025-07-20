@@ -10,6 +10,9 @@ interface IStore {
   logo?: string | null;
   slug: string;
   topDealHeadline?: string;
+  // Make sure tagline and mainUrl are here too if they are part of the store object you're fetching
+  // tagline?: string;
+  // mainUrl?: string;
 }
 
 interface IProduct {
@@ -42,7 +45,6 @@ interface TopDealsSectionProps {
 }
 
 const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
-  // Destructure className
   const [topDeals, setTopDeals] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +68,6 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
     }, 3000);
   };
 
-  // Helper to get today's date string for localStorage keys
   const getTodayDateString = () => new Date().toDateString();
 
   const fetchTopDeals = useCallback(async () => {
@@ -83,7 +84,6 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
         shopNowLink: deal.shopNowUrl,
       }));
 
-      // --- ONE-TIME FRONTEND FORCE RESET LOGIC (FOR `TopDealsSection.tsx`) ---
       const forceResetKey = "forceResetTodayUses_TopDealsSection";
       const lastForceResetDate = localStorage.getItem(forceResetKey);
       const today = getTodayDateString();
@@ -100,7 +100,6 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
       } else {
         console.log("TopDealsSection: One-time force reset already ran today.");
       }
-      // --- END ONE-TIME FRONTEND FORCE RESET LOGIC ---
 
       setTopDeals(fetchedDeals);
       setLoading(false);
@@ -118,7 +117,7 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
 
   const handleInteraction = async (
     productId: string,
-    action: "copy" | "shop" // Removed 'like' | 'dislike'
+    action: "copy" | "shop"
   ) => {
     console.log(
       `Frontend: Attempting interaction for product ID: ${productId}, action: ${action}`
@@ -145,8 +144,8 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
                   usageCount: updatedData.totalUses,
                   todayUses: updatedData.todayUses,
                   successRate: updatedData.successRate,
-                  likes: updatedData.likes, // Still update if backend sends, but not displayed
-                  dislikes: updatedData.dislikes, // Still update if backend sends, but not displayed
+                  likes: updatedData.likes,
+                  dislikes: updatedData.dislikes,
                 }
               : deal
           );
@@ -193,14 +192,11 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
     showNotification("Redirecting to store...", "success");
   };
 
-  // Removed handleLike and handleDislike functions
-
   const STATIC_FILES_BASE_URL = "http://localhost:5000/uploads";
   const PLACEHOLDER_LOGO_PATH = "/placeholder-logo.png";
 
   if (loading) {
     return (
-      // Apply the className prop here, combined with other classes
       <section className={`${className || ""} pb-12 container mx-auto px-4`}>
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">
           Top Deals
@@ -212,7 +208,6 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
 
   if (error) {
     return (
-      // Apply the className prop here
       <section className={`${className || ""} pb-12 container mx-auto px-4`}>
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">
           Top Deals
@@ -224,7 +219,6 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
 
   if (topDeals.length === 0) {
     return (
-      // Apply the className prop here
       <section className={`${className || ""} pb-12 container mx-auto px-4`}>
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">
           Top Deals
@@ -237,7 +231,6 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
   }
 
   return (
-    // Apply the className prop here to the main section
     <section
       className={`${
         className || ""
@@ -260,7 +253,10 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-items-center">
+      {/* Changed to flex-col and align-items-center to stack cards vertically and center them */}
+      <div className="flex flex-col items-center gap-8">
+        {" "}
+        {/* CHANGED THIS LINE */}
         {topDeals.map((deal) => {
           const product = deal;
           const logoSrc =
@@ -269,9 +265,10 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
               : PLACEHOLDER_LOGO_PATH;
 
           return (
+            // Each card needs a defined width to be centered effectively
             <div
               key={product._id}
-              className="bg-white p-6 rounded-lg shadow-md border border-gray-200 flex flex-col w-full max-w-sm"
+              className="bg-white p-6 rounded-lg shadow-md border border-gray-200 flex flex-col w-full max-w-sm" // max-w-sm helps control card width
             >
               <div className="flex flex-col items-start mb-4">
                 {product.store?.logo &&
@@ -333,9 +330,6 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
               </div>
 
               <div className="flex items-center justify-end text-gray-600 text-sm mt-auto">
-                {" "}
-                {/* Changed justify-between to justify-end */}
-                {/* Removed Like/Dislike Buttons */}
                 <div className="flex items-center space-x-2 text-gray-600">
                   <span className="font-semibold text-green-700">
                     {product.successRate}% SUCCESS

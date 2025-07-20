@@ -1,20 +1,20 @@
 // server/src/models/Product.ts
 
 import { Document, Schema, model } from "mongoose";
-import { IStore } from "./Store";
+import { IStore } from "./Store"; // Assuming IStore is correctly imported and defined
 
 // Define the IProduct interface
 export interface IProduct extends Document {
   _id: string;
   name: string;
   slug: string;
-  description: string;
-  price: number;
+  description?: string; // Made optional
+  price?: number; // Made optional
   discountedPrice?: number;
-  category?: string;
+  category?: string; // Already optional due to default, but explicit `?` for TypeScript clarity
   images: string[];
   store: Schema.Types.ObjectId | IStore;
-  stock: number;
+  stock?: number; // Made optional
   isActive: boolean;
   discountCode: string;
   shopNowUrl: string;
@@ -23,7 +23,7 @@ export interface IProduct extends Document {
   successRate: number;
   likes: number;
   dislikes: number;
-  lastDailyReset: Date; // <--- ADDED: Field to track last daily reset
+  lastDailyReset: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,18 +36,23 @@ const ProductSchema = new Schema<IProduct>(
       required: [true, "Please add a product name"],
       trim: true,
       maxlength: [100, "Name can not be more than 100 characters"],
+      unique: true, // Assuming product names should be unique for slug generation
     },
-    slug: String, // <--- ADDED: For SEO-friendly URLs
+    slug: String,
     description: {
       type: String,
-      required: [true, "Please add a description"],
+      // Removed `required: true`
+      trim: true,
       maxlength: [500, "Description can not be more than 500 characters"],
+      default: "No description provided.", // Added a default value
     },
     price: {
       type: Number,
-      required: [true, "Please add a price"],
+      // Removed `required: true`
+      default: 0, // Added a default value
+      min: [0, "Price cannot be negative"],
     },
-    discountedPrice: Number,
+    discountedPrice: Number, // Already optional
     category: {
       type: String,
       enum: [
@@ -60,32 +65,38 @@ const ProductSchema = new Schema<IProduct>(
         "Automotive",
         "Food & Drink",
         "Other",
+        // CONSIDER ADDING A 'No Category' or 'Uncategorized' if 'Other' doesn't fit this
+        // For now, 'Other' is your default.
       ],
-      default: "Other",
+      default: "Other", // If frontend sends nothing, this will be used
     },
-    images: [String], // Array of image URLs
+    images: {
+      type: [String],
+      default: [], // Ensure it defaults to an empty array if no images are provided
+    },
     store: {
       type: Schema.Types.ObjectId,
-      ref: "Store", // Reference to the Store model
-      required: true,
+      ref: "Store",
+      required: true, // This remains required as it's selected in the form
     },
     stock: {
       type: Number,
-      required: [true, "Please add stock quantity"],
+      // Removed `required: true`
+      default: 0, // Added a default value
       min: [0, "Stock cannot be negative"],
     },
     isActive: {
       type: Boolean,
-      default: true,
+      default: true, // Already has a default
     },
     discountCode: {
       type: String,
-      required: [true, "Please add a discount code"],
+      required: [true, "Please add a discount code"], // This remains required
       maxlength: [50, "Discount code can not be more than 50 characters"],
     },
     shopNowUrl: {
       type: String,
-      required: [true, "Please add a 'Shop Now' URL"],
+      required: [true, "Please add a 'Shop Now' URL"], // This remains required
       match: [
         /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/,
         "Please use a valid URL with HTTP or HTTPS",
@@ -101,7 +112,7 @@ const ProductSchema = new Schema<IProduct>(
     },
     successRate: {
       type: Number,
-      default: 100, // Default to 100% successful if no feedback
+      default: 100,
       min: 0,
       max: 100,
     },
@@ -114,29 +125,26 @@ const ProductSchema = new Schema<IProduct>(
       default: 0,
     },
     lastDailyReset: {
-      // <--- ADDED: Default to midnight of the current day
       type: Date,
       default: () => {
         const date = new Date();
-        date.setHours(0, 0, 0, 0); // Set to midnight of current day
+        date.setHours(0, 0, 0, 0);
         return date;
       },
     },
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt timestamps
+    timestamps: true,
   }
 );
 
 // Add a pre-save hook to generate the slug from the product name
-// This hook ensures slug is always generated/updated on save
 ProductSchema.pre<IProduct>("save", function (next) {
   if (this.isModified("name") || !this.slug) {
-    // Generate if name changes or if slug is missing
     this.slug = this.name
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-") // Replace non-alphanumeric with hyphen
-      .replace(/^-+|-+$/g, ""); // Trim hyphens from start/end
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
   }
   next();
 });

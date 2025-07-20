@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import type { IProduct } from "../../../server/src/models/Product";
-import type { IStore } from "../../../server/src/models/Store"; // Make sure IStore is correctly imported if used in IProduct
+import type { IStore } from "../../../server/src/models/Store";
 
 const AdminProductListPage: React.FC = () => {
   const [products, setProducts] = useState<IProduct[]>([]);
@@ -119,7 +119,7 @@ const AdminProductListPage: React.FC = () => {
   if (error) return <div className="text-center p-8 text-red-600">{error}</div>;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
       {/* Custom Notification */}
       {notificationMessage && (
         <div
@@ -137,7 +137,7 @@ const AdminProductListPage: React.FC = () => {
       {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full text-center">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm w-11/12 text-center">
             <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
             <p className="mb-6">
               Are you sure you want to delete this product? This action cannot
@@ -161,21 +161,21 @@ const AdminProductListPage: React.FC = () => {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-md">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">
+      <div className="max-w-7xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-md">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center sm:text-left">
             Product Management
           </h1>
-          <div className="flex space-x-4">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
             <Link
               to="/admin/dashboard"
-              className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+              className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 text-center"
             >
               Back to Dashboard
             </Link>
             <Link
               to="/admin/products/new"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 text-center"
             >
               Add New Product
             </Link>
@@ -187,121 +187,198 @@ const AdminProductListPage: React.FC = () => {
             No products found. Add a new one!
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200">
-              <thead>
-                <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                  <th className="py-3 px-6 text-left">Image</th>
-                  <th className="py-3 px-6 text-left">Name</th>
-                  <th className="py-3 px-6 text-left">Store</th>
-                  <th className="py-3 px-6 text-left">Price (Disc.)</th>
-                  <th className="py-3 px-6 text-left">Code</th>
-                  <th className="py-3 px-6 text-left">Stock</th>
-                  <th className="py-3 px-6 text-left">Active</th>
-                  <th className="py-3 px-6 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="text-gray-700 text-sm font-light">
-                {products.map((product) => (
-                  // IMPORTANT: Ensure NO NEWLINES or extra SPACES between <td> tags in this line
-                  <tr
-                    key={product._id as string}
-                    className="border-b border-gray-200 hover:bg-gray-100"
-                  >
-                    <td className="py-3 px-6 text-left">
-                      {product.images && product.images.length > 0 ? (
-                        <img
-                          src={`http://localhost:5000/uploads/${product.images[0]}`}
-                          alt={product.name}
-                          className="w-16 h-16 object-cover rounded"
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = PLACEHOLDER_IMAGE_PATH;
-                            e.currentTarget.alt = "Product image not available";
-                          }}
-                        />
-                      ) : (
-                        <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded text-xs text-gray-500">
-                          No Img
+          <>
+            {/* Table View (for md and larger screens) */}
+            <div className="overflow-x-auto hidden md:block">
+              <table className="min-w-full bg-white border border-gray-200">
+                <thead>
+                  <tr className="bg-gray-200 text-gray-600 uppercase text-xs sm:text-sm leading-normal">
+                    <th className="py-2 px-3 sm:py-3 sm:px-6 text-left">
+                      Image
+                    </th>
+                    <th className="py-2 px-3 sm:py-3 sm:px-6 text-left">
+                      Name
+                    </th>
+                    <th className="py-2 px-3 sm:py-3 sm:px-6 text-left">
+                      Store
+                    </th>
+                    <th className="py-2 px-3 sm:py-3 sm:px-6 text-left">
+                      Code
+                    </th>
+                    <th className="py-2 px-3 sm:py-3 sm:px-6 text-left">
+                      Active
+                    </th>
+                    <th className="py-2 px-3 sm:py-3 sm:px-6 text-center">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="text-gray-700 text-xs sm:text-sm font-light">
+                  {products.map((product) => (
+                    <tr
+                      key={product._id as string}
+                      className="border-b border-gray-200 hover:bg-gray-100"
+                    >
+                      <td className="py-2 px-3 sm:py-3 sm:px-6 text-left">
+                        {product.images && product.images.length > 0 ? (
+                          <img
+                            src={`http://localhost:5000/uploads/${product.images[0]}`}
+                            alt={product.name}
+                            className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = PLACEHOLDER_IMAGE_PATH;
+                              e.currentTarget.alt =
+                                "Product image not available";
+                            }}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 flex items-center justify-center rounded text-xs text-gray-500">
+                            No Img
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 sm:py-3 sm:px-6 text-left font-medium">
+                        {product.name}
+                      </td>
+                      <td className="py-2 px-3 sm:py-3 sm:px-6 text-left">
+                        {typeof product.store === "object" &&
+                        product.store !== null &&
+                        "name" in product.store
+                          ? (product.store as { name: string }).name
+                          : "N/A"}
+                      </td>
+                      <td className="py-2 px-3 sm:py-3 sm:px-6 text-left">
+                        {product.discountCode}
+                      </td>
+                      <td className="py-2 px-3 sm:py-3 sm:px-6 text-left">
+                        {product.isActive ? (
+                          <span className="bg-green-200 text-green-800 py-1 px-2 rounded-full text-xs">
+                            Yes
+                          </span>
+                        ) : (
+                          <span className="bg-red-200 text-red-800 py-1 px-2 rounded-full text-xs">
+                            No
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 sm:py-3 sm:px-6 text-center">
+                        <div className="flex item-center justify-center space-x-1 sm:space-x-2">
+                          <Link
+                            to={`/admin/products/edit/${product._id}`}
+                            className="w-4 h-4 sm:w-5 sm:h-5 transform hover:text-purple-500 hover:scale-110"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L7.5 21H3v-4.5L15.232 5.232z"
+                              />
+                            </svg>
+                          </Link>
+                          <button
+                            onClick={() => confirmDelete(product._id as string)}
+                            className="w-4 h-4 sm:w-5 sm:h-5 transform hover:text-red-500 hover:scale-110"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
                         </div>
-                      )}
-                    </td>
-                    <td className="py-3 px-6 text-left font-medium">
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Card View (for screens smaller than md) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
+              {products.map((product) => (
+                <div
+                  key={product._id as string}
+                  className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
+                >
+                  <div className="flex flex-col items-center mb-4">
+                    {product.images && product.images.length > 0 ? (
+                      <img
+                        src={`http://localhost:5000/uploads/${product.images[0]}`}
+                        alt={product.name}
+                        className="w-24 h-24 object-cover rounded-lg mb-2"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = PLACEHOLDER_IMAGE_PATH;
+                          e.currentTarget.alt = "Product image not available";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-24 h-24 bg-gray-200 flex items-center justify-center rounded-lg mb-2 text-sm text-gray-500">
+                        No Image
+                      </div>
+                    )}
+                    <h3 className="text-lg font-bold text-gray-800 text-center">
                       {product.name}
-                    </td>
-                    <td className="py-3 px-6 text-left">
+                    </h3>
+                  </div>
+                  <div className="text-gray-700 text-sm space-y-1">
+                    <p>
+                      <strong>Store:</strong>{" "}
                       {typeof product.store === "object" &&
                       product.store !== null &&
                       "name" in product.store
                         ? (product.store as { name: string }).name
                         : "N/A"}
-                    </td>
-                    <td className="py-3 px-6 text-left">
-                      ${product.price}
-                      {product.discountedPrice
-                        ? ` ($${product.discountedPrice})`
-                        : ""}
-                    </td>
-                    <td className="py-3 px-6 text-left">
-                      {product.discountCode}
-                    </td>
-                    <td className="py-3 px-6 text-left">{product.stock}</td>
-                    <td className="py-3 px-6 text-left">
+                    </p>
+                    <p>
+                      <strong>Code:</strong> {product.discountCode}
+                    </p>
+                    <p>
+                      <strong>Active:</strong>{" "}
                       {product.isActive ? (
-                        <span className="bg-green-200 text-green-800 py-1 px-3 rounded-full text-xs">
+                        <span className="bg-green-200 text-green-800 py-0.5 px-2 rounded-full text-xs">
                           Yes
                         </span>
                       ) : (
-                        <span className="bg-red-200 text-red-800 py-1 px-3 rounded-full text-xs">
+                        <span className="bg-red-200 text-red-800 py-0.5 px-2 rounded-full text-xs">
                           No
                         </span>
                       )}
-                    </td>
-                    <td className="py-3 px-6 text-center">
-                      <div className="flex item-center justify-center">
-                        <Link
-                          to={`/admin/products/edit/${product._id}`}
-                          className="w-4 mr-2 transform hover:text-purple-500 hover:scale-110"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L7.5 21H3v-4.5L15.232 5.232z"
-                            />
-                          </svg>
-                        </Link>
-                        <button
-                          onClick={() => confirmDelete(product._id as string)}
-                          className="w-4 mr-2 transform hover:text-red-500 hover:scale-110"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </p>
+                  </div>
+                  <div className="flex justify-center mt-4 space-x-2">
+                    <Link
+                      to={`/admin/products/edit/${product._id}`}
+                      className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg text-xs"
+                    >
+                      Edit
+                    </Link>
+                    <button
+                      onClick={() => confirmDelete(product._id as string)}
+                      className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg text-xs"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

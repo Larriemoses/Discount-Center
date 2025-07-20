@@ -87,7 +87,7 @@ const WhyChooseUsSection: React.FC<WhyChooseUsSectionProps> = ({
         <hr className="border-t-2 border-purple-400 w-full max-w-4xl mx-auto mt-8" />
 
         {/* Connect With Us Section */}
-        <div className="mt-16">
+        <div className="mt-8">
           {/* Title - centered */}
           <h2 className="text-2xl md:text-4xl font-extrabold text-gray-800 mb-8 text-center">
             Connect With Us

@@ -14,8 +14,9 @@ const AdminStoreFormPage: React.FC = () => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [slug, setSlug] = useState("");
-  const [topDealHeadline, setTopDealHeadline] = useState(""); // <--- NEW STATE
-  const [tagline, setTagline] = useState(""); // <--- NEW STATE
+  const [topDealHeadline, setTopDealHeadline] = useState("");
+  const [tagline, setTagline] = useState("");
+  const [mainUrl, setMainUrl] = useState(""); // <--- NEW STATE FOR mainUrl
   const [logo, setLogo] = useState<File | null>(null); // For new logo file
   const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null); // For logo already on the server
 
@@ -38,13 +39,14 @@ const AdminStoreFormPage: React.FC = () => {
               headers: { Authorization: `Bearer ${adminToken}` },
             }
           );
-          const store: IStore = response.data; // Assuming response.data directly contains the IStore object
+          const store: IStore = response.data.data; // Access data property if your API returns { success: true, data: store }
 
           setName(store.name);
           setDescription(store.description);
           setSlug(store.slug);
-          setTopDealHeadline(store.topDealHeadline || ""); // <--- Set existing topDealHeadline
-          setTagline(store.tagline || ""); // <--- Set existing tagline
+          setTopDealHeadline(store.topDealHeadline || "");
+          setTagline(store.tagline || "");
+          setMainUrl(store.mainUrl || ""); // <--- Set existing mainUrl
           setExistingLogoUrl(
             store.logo && store.logo !== "no-photo.jpg"
               ? `/uploads/${store.logo}`
@@ -78,16 +80,21 @@ const AdminStoreFormPage: React.FC = () => {
     formData.append("name", name);
     formData.append("description", description);
     formData.append("slug", slug);
-    formData.append("topDealHeadline", topDealHeadline); // <--- APPEND NEW FIELD
-    formData.append("tagline", tagline); // <--- APPEND NEW FIELD
+    formData.append("topDealHeadline", topDealHeadline);
+    formData.append("tagline", tagline);
+    formData.append("mainUrl", mainUrl); // <--- APPEND NEW FIELD: mainUrl
 
     if (logo) {
       formData.append("logo", logo); // Append new logo file
     } else if (id && existingLogoUrl === null) {
-      // Logic for explicitly clearing logo (if you had a checkbox for it)
-      // For now, if existingLogoUrl is null and no new logo, it means no logo.
-      // If you want to explicitly remove a logo that was there, you'd need
-      // a specific mechanism (e.g., a "Clear Logo" checkbox that sets a flag).
+      // This else if block is primarily if you explicitly want to clear a logo
+      // For multipart/form-data, if 'logo' field is not appended, it's not sent,
+      // and the backend should handle retaining the existing logo if no new file is provided.
+      // If you truly want to signal 'no logo', you might need a hidden field or a specific value.
+      // For now, removing the logo from existingLogoUrl means a new logo isn't selected,
+      // and if `logo` is null, the field won't be appended.
+      // If you want to explicitly clear a logo, you might need:
+      // formData.append("clearLogo", "true"); // and handle this on backend
     }
 
     try {
@@ -200,6 +207,24 @@ const AdminStoreFormPage: React.FC = () => {
               value={tagline}
               onChange={(e) => setTagline(e.target.value)}
               placeholder="e.g., Your trusted source for quality deals."
+            />
+          </div>
+
+          {/* Main URL */}
+          <div>
+            <label
+              htmlFor="mainUrl"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Main Store URL:
+            </label>
+            <input
+              type="url" // Use type="url" for better browser validation
+              id="mainUrl"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              value={mainUrl}
+              onChange={(e) => setMainUrl(e.target.value)}
+              placeholder="e.g., https://www.example.com"
             />
           </div>
 

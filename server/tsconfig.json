@@ -1,16 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es2016",
+    "target": "ES2016",
     "module": "commonjs",
     "rootDir": "./src",
     "outDir": "./dist",
-    "moduleResolution": "node", // Very important for finding modules like express
-    "esModuleInterop": true, // Important for importing CommonJS modules
+    "moduleResolution": "node",
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true
-    // Ensure no conflicting settings here
   },
-  "include": ["src/**/*.ts"], // Ensure src files are included
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]
 }

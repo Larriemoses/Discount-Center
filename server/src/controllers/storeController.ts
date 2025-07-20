@@ -114,10 +114,8 @@ export const getPublicStores = asyncHandler(
  */
 export const createStore = asyncHandler(
   async (req: CustomRequest, res: Response, next: NextFunction) => {
-    // ***************************************************************
-    // >>>>>>>>>> UPDATED: Destructure topDealHeadline and tagline <<<<<<<<<<
-    // ***************************************************************
-    const { name, description, topDealHeadline, tagline } = req.body;
+    // Destructure all fields, including the new 'mainUrl'
+    const { name, description, topDealHeadline, tagline, mainUrl } = req.body;
     let { slug } = req.body;
 
     if (!name || !description) {
@@ -158,9 +156,10 @@ export const createStore = asyncHandler(
       description,
       slug,
       logo: logoFilename,
-      topDealHeadline: topDealHeadline || undefined, // Assign new field, use undefined if empty
-      tagline: tagline || undefined, // Assign new field, use undefined if empty
-      user: (req as any).user?._id,
+      topDealHeadline: topDealHeadline || undefined,
+      tagline: tagline || undefined,
+      mainUrl: mainUrl || undefined, // Assign new field
+      user: (req as any).user?._id, // Assuming user ID is set by auth middleware
     });
 
     const createdStore = await newStore.save();
@@ -175,10 +174,8 @@ export const createStore = asyncHandler(
  */
 export const updateStore = asyncHandler(
   async (req: CustomRequest, res: Response, next: NextFunction) => {
-    // ***************************************************************
-    // >>>>>>>>>> UPDATED: Destructure topDealHeadline and tagline <<<<<<<<<<
-    // ***************************************************************
-    const { name, description, topDealHeadline, tagline } = req.body;
+    // Destructure all fields, including the new 'mainUrl'
+    const { name, description, topDealHeadline, tagline, mainUrl } = req.body;
     let { slug } = req.body;
     const storeId = req.params.id;
 
@@ -191,17 +188,15 @@ export const updateStore = asyncHandler(
       return next(new ErrorResponse("Store not found", 404));
     }
 
-    // Update fields
+    // Update fields conditionally
     store.name = name !== undefined ? name : store.name;
     store.description =
       description !== undefined ? description : store.description;
 
-    // ***************************************************************
-    // >>>>>>>>>> UPDATED: Update topDealHeadline and tagline fields <<<<<<<<<<
-    // ***************************************************************
     store.topDealHeadline =
       topDealHeadline !== undefined ? topDealHeadline : store.topDealHeadline;
     store.tagline = tagline !== undefined ? tagline : store.tagline;
+    store.mainUrl = mainUrl !== undefined ? mainUrl : store.mainUrl; // Update new field
 
     // Handle slug update (only if changed and unique)
     if (slug !== undefined) {

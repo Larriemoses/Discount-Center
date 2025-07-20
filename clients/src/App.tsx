@@ -11,6 +11,9 @@ import Navbar from "./components/Navbar";
 import StoreDetailsPage from "./pages/StoreDetailsPage";
 import StoreListPage from "./pages/StoreListPage";
 import Footer from "./components/Footer"; // Import the Footer component
+import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
+import SubmitStorePage from "./pages/SubmitStorePage"; // Import new page
+import ContactUsPage from "./pages/ContactUsPage"; // Import new page
 
 function App() {
   const location = useLocation();
@@ -25,7 +28,10 @@ function App() {
         {/* HomePage will now also need pt-[7rem] as it follows a solid Navbar */}
         {/* IMPORTANT: Ensure HomePage.tsx's main div or container has 'pt-[7rem]' */}
         <Route path="/" element={<HomePage />} />
-
+        <Route path="/submit-store" element={<SubmitStorePage />} />{" "}
+        {/* New public route */}
+        <Route path="/contact-us" element={<ContactUsPage />} />{" "}
+        {/* New public route */}
         {/* Admin Routes (no Navbar, no Footer) */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
@@ -34,11 +40,11 @@ function App() {
         <Route path="/admin/stores/edit/:id" element={<AdminStoreFormPage />} />
         <Route path="/admin/products" element={<AdminProductListPage />} />
         <Route path="/admin/products/new" element={<AdminProductFormPage />} />
+        <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
         <Route
           path="/admin/products/edit/:id"
           element={<AdminProductFormPage />}
         />
-
         {/* Public Routes - All these pages now need a wrapper with pt-[7rem] to clear the fixed Navbar */}
         <Route
           path="/today-deals"

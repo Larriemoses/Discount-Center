@@ -238,10 +238,6 @@ const StoreDetailsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Products section */}
-        <h2 className="text-xl sm:text-2xl font-bold mt-8 mb-8 text-gray-800 text-center">
-          Products from {store.name}
-        </h2>
         {productsLoading ? (
           <div className="text-center p-4">Loading products...</div>
         ) : productsError ? (

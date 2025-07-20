@@ -22,7 +22,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">
           Welcome, {adminUsername} (Admin Dashboard)
         </h1>
         <p className="text-gray-700 mb-8">
@@ -65,10 +65,10 @@ const AdminDashboard: React.FC = () => {
             </p>
             {/* You can add a Link for Analytics later */}
             <Link
-              to="/admin/analytics"
-              className="mt-4 bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded"
+              to="/admin/analytics" // Or wherever you want the route to be
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg text-center transition duration-300 transform hover:scale-105"
             >
-              View Reports
+              View Analytics & Reports
             </Link>
           </div>
         </div>
