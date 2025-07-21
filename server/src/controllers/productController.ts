@@ -2,7 +2,7 @@
 
 import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
-import Product, { IProductDocument } from "../models/Product"; // <--- CHANGE HERE: Import IProductDocument
+import Product, { IProductDocument } from "../models/Product";
 import Store from "../models/Store";
 import path from "path";
 import fs from "fs";
@@ -54,7 +54,6 @@ const getTodayMidnight = () => {
 
 // Function to apply the daily reset logic to a product
 const applyDailyReset = async (product: IProductDocument) => {
-  // <--- CHANGE HERE: Use IProductDocument
   const today = getTodayMidnight();
   // Use .toDateString() for date-only comparison, ignoring time
   if (
@@ -93,7 +92,7 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
 // @route   GET /api/products/stores/:storeId/products
 // @access  Public
 export const getProductsByStore = asyncHandler(
-  async (req: Request, res: Response) => {
+  async (req: Request<{ storeId: string }>, res: Response) => {
     const { storeId } = req.params;
     const storeExists = await Store.findById(storeId);
     if (!storeExists) {
@@ -123,7 +122,7 @@ export const getProductById = asyncHandler(
     const product = (await Product.findById(req.params.id).populate(
       "store",
       "name logo"
-    )) as IProductDocument | null; // <--- CHANGE HERE: Use IProductDocument
+    )) as IProductDocument | null;
 
     if (!product) {
       res.status(404);
@@ -140,7 +139,8 @@ export const getProductById = asyncHandler(
 // @route   POST /api/stores/:storeId/products
 // @access  Private (Admin)
 export const createProduct = asyncHandler(
-  async (req: Request, res: Response) => {
+  async (req: Request<{ storeId: string }>, res: Response) => {
+    const { storeId } = req.params;
     const {
       name,
       description,
@@ -178,7 +178,6 @@ export const createProduct = asyncHandler(
     }
 
     const newProduct: IProductDocument = new Product({
-      // <--- CHANGE HERE: Use IProductDocument
       name,
       slug: slugify(name, { lower: true, strict: true }),
       description: description,
@@ -224,7 +223,7 @@ export const updateProduct = asyncHandler(
 
     let product = (await Product.findById(
       productId
-    ).exec()) as IProductDocument | null; // <--- CHANGE HERE: Use IProductDocument
+    ).exec()) as IProductDocument | null;
 
     if (!product) {
       res.status(404);
@@ -264,15 +263,21 @@ export const updateProduct = asyncHandler(
 
     if (newStoreId) {
       let currentStoreIdString: string;
-      if (product.store instanceof mongoose.Types.ObjectId) {
-        currentStoreIdString = product.store.toString();
-      } else if (
+      // --- FIX HERE: Use a more robust type guard for product.store ---
+      if (
         product.store &&
         typeof product.store === "object" &&
         "_id" in product.store
       ) {
-        currentStoreIdString = (product.store as any)._id.toString();
+        // It's a populated IStoreApi object
+        currentStoreIdString = String(
+          (product.store as mongoose.Types.ObjectId)._id || product.store
+        );
+      } else if (typeof product.store === "string") {
+        // It's an unpopulated ObjectId string
+        currentStoreIdString = product.store;
       } else {
+        // Fallback for other unexpected cases or if it's a direct ObjectId instance
         currentStoreIdString = String(product.store);
       }
 
@@ -324,7 +329,7 @@ export const deleteProduct = asyncHandler(
     const productId = req.params.id;
     const product = (await Product.findById(
       productId
-    )) as IProductDocument | null; // <--- CHANGE HERE: Use IProductDocument
+    )) as IProductDocument | null;
 
     if (!product) {
       res.status(404);
@@ -352,7 +357,7 @@ export const interactProduct = asyncHandler(
       `Backend: Received interaction for product ID: ${id}, action: ${action}`
     );
 
-    const product = (await Product.findById(id)) as IProductDocument | null; // <--- CHANGE HERE: Use IProductDocument
+    const product = (await Product.findById(id)) as IProductDocument | null;
 
     if (!product) {
       console.log(`Backend: Product with ID ${id} not found.`);
@@ -421,7 +426,7 @@ export const getTopDeals = asyncHandler(async (req: Request, res: Response) => {
 
     const updatedTopDeals = [];
     for (let product of topDeals) {
-      await applyDailyReset(product as IProductDocument); // <--- CHANGE HERE: Cast to IProductDocument
+      await applyDailyReset(product as IProductDocument);
       updatedTopDeals.push(product);
     }
 
@@ -450,7 +455,7 @@ export const getTopProductsByUses = asyncHandler(
     // Apply daily reset to all products before fetching to ensure data is fresh
     const products = await Product.find({});
     for (const product of products) {
-      await applyDailyReset(product as IProductDocument); // <--- CHANGE HERE: Cast to IProductDocument
+      await applyDailyReset(product as IProductDocument);
     }
 
     const topProducts = await Product.find({ isActive: true })
@@ -474,7 +479,7 @@ export const getTopProductsBySuccessRate = asyncHandler(
     // Apply daily reset to all products before fetching
     const products = await Product.find({});
     for (const product of products) {
-      await applyDailyReset(product as IProductDocument); // <--- CHANGE HERE: Cast to IProductDocument
+      await applyDailyReset(product as IProductDocument);
     }
 
     const topProducts = await Product.find({
@@ -527,7 +532,7 @@ export const getDailyUsageSummary = asyncHandler(
     });
 
     for (const product of productsToReset) {
-      await applyDailyReset(product as IProductDocument); // <--- CHANGE HERE: Cast to IProductDocument
+      await applyDailyReset(product as IProductDocument);
     }
 
     const dailyUsageProducts = await Product.find({ todayUses: { $gt: 0 } })
