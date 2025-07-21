@@ -1,22 +1,22 @@
-// src/models/Store.ts
-import mongoose, { Document, Schema } from "mongoose";
+// server/src/models/Store.ts
+import mongoose, { Document, Schema, model, Model } from "mongoose";
+import { IStore } from "@common/interfaces/IStore"; // Use the base store interface
 
-// Define the interface for a Store document
-export interface IStore extends Document {
-  name: string;
-  description: string;
-  slug: string;
-  logo?: string;
-  topDealHeadline?: string; // This will be your 'Subtitle'
-  tagline?: string; // <--- NEW: This will be your 'Sub-subtitle'
-  mainUrl?: string; // It's correctly defined in the interface
-  images?: string[];
-  createdAt: Date;
-  updatedAt: Date;
+// Define the Mongoose Document interface.
+export interface IStoreDocument extends IStore, Document {
+  // Add any custom instance methods you define on the schema here if needed
 }
 
-// Define the Store schema
-const StoreSchema: Schema = new Schema(
+// Define the Mongoose Model interface (optional but good for type safety on statics)
+export interface IStoreModel extends Model<IStoreDocument> {
+  // Add any static methods you define on the schema here if needed
+}
+
+// Define the Store schema, using IStoreDocument and IStoreModel for type safety
+const StoreSchema: Schema<IStoreDocument, IStoreModel> = new Schema<
+  IStoreDocument,
+  IStoreModel
+>(
   {
     name: {
       type: String,
@@ -51,9 +51,6 @@ const StoreSchema: Schema = new Schema(
       trim: true,
       maxlength: [150, "Tagline can not be more than 150 characters"],
     },
-    // **********************************************************
-    // >>>>>>>>>> ADD THE mainUrl FIELD HERE <<<<<<<<<<
-    // **********************************************************
     mainUrl: {
       type: String,
       trim: true,
@@ -69,14 +66,18 @@ const StoreSchema: Schema = new Schema(
       type: [String],
       default: [],
     },
+    // If you had a field like this in Store.ts that references another schema:
+    // SomeRefField: {
+    //   type: mongoose.Schema.Types.ObjectId as unknown as typeof Schema.Types.ObjectId, // Apply the fix here too!
+    //   ref: "AnotherModel",
+    // },
   },
   {
     timestamps: true,
   }
 );
 
-// Pre-save hook to generate slug if not provided or if name changes
-StoreSchema.pre<IStore>("save", function (next) {
+StoreSchema.pre<IStoreDocument>("save", function (next) {
   if (this.isNew || (this.isModified("name") && !this.isModified("slug"))) {
     this.slug = this.name
       .toLowerCase()
@@ -86,6 +87,6 @@ StoreSchema.pre<IStore>("save", function (next) {
   next();
 });
 
-const Store = mongoose.model<IStore>("Store", StoreSchema);
+const Store = model<IStoreDocument, IStoreModel>("Store", StoreSchema);
 
 export default Store;

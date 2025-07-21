@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axiosInstance from "../utils/AxiosInstance";
-import type { IStore } from "../../../server/src/models/Store";
+import axiosInstance from "../utils/axiosInstance";
+import type { IStore } from "@common/interfaces/IStore";
 
 const StoreListPage: React.FC = () => {
   const [stores, setStores] = useState<IStore[]>([]);

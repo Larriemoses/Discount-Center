@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 // import axios from "axios"; // <--- REMOVE this line
-import axiosInstance from "../utils/AxiosInstance"; // <--- ADD this line
+import axiosInstance from "../utils/axiosInstance"; // <--- ADD this line
 import { useNavigate, useParams, Link } from "react-router-dom";
-import type { IStore } from "../../../server/src/models/Store"; // Corrected type-only import
+import type { IStore } from "@common/interfaces/IStore";
+// Corrected type-only import
 
 const AdminStoreFormPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>(); // 'id' will be present for edit mode

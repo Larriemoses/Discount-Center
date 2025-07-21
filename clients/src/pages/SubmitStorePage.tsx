@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 // import axios from "axios"; // Remove this line
-import axiosInstance from "../utils/AxiosInstance"; // Add this line
+import axiosInstance from "../utils/axiosInstance"; // Add this line
 import { Link } from "react-router-dom";
 
 const SubmitStorePage: React.FC = () => {

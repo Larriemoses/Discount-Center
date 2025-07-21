@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 // import axios from "axios"; // <--- REMOVE this line
-import axiosInstance from "../utils/AxiosInstance"; // <--- ADD this line
+import axiosInstance from "../utils/axiosInstance"; // <--- ADD this line
 import { Link, useNavigate } from "react-router-dom";
-import type { IProduct } from "../../../server/src/models/Product";
-import type { IStore } from "../../../server/src/models/Store";
+// import type { IProduct } from "../../../server/src/models/Product";
+import type { IProduct } from "@common/interfaces/IProduct"; // Adjust path if your types file is elsewhere
 
 const AdminProductListPage: React.FC = () => {
   const [products, setProducts] = useState<IProduct[]>([]);

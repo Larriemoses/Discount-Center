@@ -1,8 +1,8 @@
 // client/src/pages/AdminAnalyticsPage.tsx
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 // import axios from "axios"; // <--- REMOVE this import
-import axiosInstance from "../utils/AxiosInstance"; // <--- ADD this import
+import axiosInstance from "../utils/axiosInstance"; // <--- ADD this import
 import { Link, useNavigate } from "react-router-dom";
 import {
   BarChart,
@@ -18,7 +18,7 @@ import {
   Cell,
 } from "recharts";
 
-import type { IProduct } from "../../../server/src/models/Product";
+import type { IProductApi } from "@common/types/IProductTypes";
 
 interface AnalyticsData {
   totalProducts: number;

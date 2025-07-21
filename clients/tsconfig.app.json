@@ -1,3 +1,4 @@
+// Discount-Center/client/tsconfig.app.json
 {
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
@@ -21,7 +22,14 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    // Monorepo config for common types
+    "baseUrl": "./",
+    "paths": {
+      "@common/*": ["../common/src/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "../common/src"],
+  "exclude": ["node_modules", "dist"]
 }

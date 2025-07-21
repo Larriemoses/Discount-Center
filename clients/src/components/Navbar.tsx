@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
 // import axios from "axios"; // Remove this line
-import axiosInstance from "../utils/AxiosInstance"; // Add this line
-import type { IStore } from "../../../server/src/models/Store";
+import axiosInstance from "../utils/axiosInstance"; // Add this line
+import type { IStore } from "@common/interfaces/IStore";
 
 const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

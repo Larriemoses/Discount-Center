@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 // import axios from "axios"; // <--- REMOVE this import
-import axiosInstance from "../utils/AxiosInstance"; // <--- ADD this import
+import axiosInstance from "../utils/axiosInstance"; // <--- ADD this import
 import { useNavigate } from "react-router-dom";
 
 const AdminLogin: React.FC = () => {

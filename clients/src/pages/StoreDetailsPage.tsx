@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 // import axios, { AxiosError } from "axios"; // <--- REMOVE this line
-import axiosInstance from "../utils/AxiosInstance"; // <--- ADD this line
+import axiosInstance from "../utils/axiosInstance"; // <--- ADD this line
 import type { IStoreClient, IProductClient } from "../types"; // Adjust path if your types file is elsewhere
 
 const StoreDetailsPage: React.FC = () => {

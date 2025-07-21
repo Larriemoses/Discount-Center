@@ -1,16 +1,24 @@
+// Discount-Center/server/tsconfig.json
 {
   "compilerOptions": {
-    "target": "es2020", // modern and stable
-    "module": "commonjs", // required for Node.js
-    "lib": ["es2020"], // include relevant libraries
-    "rootDir": "./src",
+    "target": "es2016",
+    "module": "commonjs", // Keep this for Node.js backend
+    // "rootDir": "./src",  <-- THIS LINE SHOULD BE REMOVED
     "outDir": "./dist",
-    "moduleResolution": "node",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": "./",
+    "paths": {
+      "@common/*": ["../common/src/*"]
+    }
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*.ts", "../common/src/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "../client", // <--- CRITICAL ADDITION
+    "../client/**/*" // <--- CRITICAL ADDITION
+  ]
 }

@@ -1,7 +1,7 @@
 // client/src/pages/ContactUsPage.tsx
 import React, { useState } from "react";
 // import axios from "axios"; // <--- REMOVE this line
-import axiosInstance from "../utils/AxiosInstance"; // <--- ADD this line
+import axiosInstance from "../utils/axiosInstance"; // <--- ADD this line
 import { Link } from "react-router-dom";
 
 const ContactUsPage: React.FC = () => {

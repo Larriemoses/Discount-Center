@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 // import axios from "axios"; // Remove this line
-import axiosInstance from "../utils/AxiosInstance"; // Add this line
+import axiosInstance from "../utils/axiosInstance"; // Add this line
 import { Link, useNavigate } from "react-router-dom";
-import type { IStore } from "../../../server/src/models/Store"; // Assuming this path is correct
+import type { IStore } from "@common/interfaces/IStore";
+// Assuming this path is correct
 
 const AdminStoreListPage: React.FC = () => {
   const [stores, setStores] = useState<IStore[]>([]);
