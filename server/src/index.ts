@@ -5,8 +5,8 @@ import dotenv from "dotenv";
 import path from "path";
 import { connectDB } from "./config/db";
 import cors from "cors";
-import cron from "node-cron"; // <--- NEW: For scheduled tasks
-import Product from "./models/Product"; // <--- NEW: Import Product model for cron job
+import cron from "node-cron";
+import Product from "./models/Product";
 
 // Import your custom middleware for error handling
 import { notFound } from "./middleware/notFoundMiddleware";
@@ -16,8 +16,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import authRoutes from "./routes/authRoutes";
 import storeRoutes from "./routes/storeRoutes";
 import productRoutes from "./routes/productRoutes";
-import publicRoutes from "./routes/publicRoutes"; // Import public routes (ALREADY THERE)
-// import itemRoutes from './routes/itemRoutes'; // Uncomment if you still need itemRoutes
+import publicRoutes from "./routes/publicRoutes"; // Import public routes
 
 // Load environment variables from .env file
 dotenv.config();
@@ -25,13 +24,31 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Configure CORS for frontend communication
+// --- START: CORS Configuration ---
+// Get allowed origins from environment variables, split by comma, and trim whitespace.
+// This allows you to set ALLOWED_ORIGINS="http://localhost:5173,https://your-vercel-app.vercel.app"
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173")
+  .split(",")
+  .map((url) => url.trim());
+
 app.use(
   cors({
-    origin: "http://localhost:5173", // <--- Ensure this EXACTLY matches your frontend URL (e.g., Vite dev server)
-    credentials: true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      // Check if the requesting origin is in our allowed list
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}.`;
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
+    credentials: true, // Important for sending cookies/tokens (like your adminToken)
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // Explicitly allow common HTTP methods
+    allowedHeaders: ["Content-Type", "Authorization"], // Explicitly allow common headers
   })
 );
+// --- END: CORS Configuration ---
 
 // Middleware for parsing request bodies
 app.use(express.json()); // For parsing application/json
@@ -40,7 +57,7 @@ app.use(express.urlencoded({ extended: true })); // For parsing application/x-ww
 // Connect to MongoDB
 connectDB();
 
-// --- START: Global Daily Reset Cron Job (Optional but Recommended) ---
+// --- START: Global Daily Reset Cron Job ---
 cron.schedule(
   "0 0 * * *",
   async () => {
@@ -66,7 +83,7 @@ cron.schedule(
     }
   },
   {
-    timezone: "Africa/Lagos", // <--- IMPORTANT: Set your server's timezone here
+    timezone: "Africa/Lagos", // IMPORTANT: Set your server's timezone here
   }
 );
 // --- END: Global Daily Reset Cron Job ---
@@ -88,8 +105,7 @@ app.get("/", (req: Request, res: Response) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/stores", storeRoutes);
 app.use("/api/products", productRoutes);
-app.use("/api/public", publicRoutes); // <--- ADD THIS LINE! This is the missing piece.
-// app.use('/api/items', itemRoutes); // Uncomment if you still need itemRoutes
+app.use("/api/public", publicRoutes); // This was missing in your previous version, now explicitly added.
 
 // IMPORTANT: Error Handling Middleware (These must be placed AFTER all your specific routes)
 // 1. Not Found Middleware: Catches any requests that don't match any defined routes
