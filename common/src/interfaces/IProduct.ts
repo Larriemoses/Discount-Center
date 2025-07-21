@@ -1,5 +1,5 @@
 // common/src/interfaces/IProduct.ts
-import { IStore } from "./IStore"; // Import the base IStore interface
+// import type { IStore } from "./IStore"; // Import the base IStore interface
 
 export interface IProduct {
   name: string;

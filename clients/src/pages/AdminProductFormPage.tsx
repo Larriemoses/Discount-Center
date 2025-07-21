@@ -1,87 +1,83 @@
-// client/src/pages/AdminProductFormPage.tsx
+// src/pages/AdminProductFormPage.tsx
 
-import React, { useState, useEffect } from "react";
-// import axios from "axios"; // <--- REMOVE this line
-import axiosInstance from "../utils/axiosInstance"; // <--- ADD this line
+import { useState, useEffect } from "react"; // Removed React
+import axiosInstance from "../utils/axiosInstance";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import type { IProduct } from "@common/interfaces/IProduct";
-import type { IStore } from "@common/interfaces/IStore";
+import type { IProductApi } from "@common/types/IProductTypes"; // <--- Use IProductApi and added 'type'
+import type { IStoreApi } from "@common/types/IStoreTypes"; // <--- Use IStoreApi and added 'type'
+
+// Define interfaces for API responses (matching backend structure)
+interface SingleProductApiResponse {
+  success: boolean;
+  data: IProductApi; // The actual product object
+}
+
+interface StoresApiResponse {
+  success: boolean;
+  count: number;
+  data: IStoreApi[];
+}
 
 const AdminProductFormPage: React.FC = () => {
-  const { id } = useParams<{ id?: string }>(); // 'id' will be present for edit mode
+  const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const adminToken = localStorage.getItem("adminToken");
 
-  // --- Form state for ONLY the product fields you want to fill ---
   const [name, setName] = useState("");
   const [discountCode, setDiscountCode] = useState("");
   const [shopNowUrl, setShopNowUrl] = useState("");
-  const [images, setImages] = useState<FileList | null>(null); // For new image files
-  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]); // For images already on the server
-  const [selectedStore, setSelectedStore] = useState(""); // To select the product's store
+  const [images, setImages] = useState<FileList | null>(null);
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+  const [selectedStore, setSelectedStore] = useState("");
 
-  // State for fetching data and submission
-  const [stores, setStores] = useState<IStore[]>([]);
-  const [loading, setLoading] = useState(true); // For initial data fetch
+  const [stores, setStores] = useState<IStoreApi[]>([]); // Use IStoreApi for state
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [submitLoading, setSubmitLoading] = useState(false); // For form submission
+  const [submitLoading, setSubmitLoading] = useState(false);
 
-  // Define backend base URL for images
-  // Assuming VITE_BACKEND_URL is something like "https://discount-center.onrender.com/api"
-  // We need "https://discount-center.onrender.com" for static assets.
   const backendRootUrl = import.meta.env.VITE_BACKEND_URL.replace("/api", "");
 
-  // --- Effect to fetch stores and product data (if in edit mode) ---
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      setError(""); // Clear previous errors
+      setError("");
       try {
-        // Fetch all stores (needed for both add and edit mode to select a store)
-        const storesResponse = await axiosInstance.get(
-          "/stores", // Use relative path with axiosInstance
+        const storesResponse = await axiosInstance.get<StoresApiResponse>(
+          "/stores",
           {
             headers: { Authorization: `Bearer ${adminToken}` },
           }
         );
-        // Ensure you're accessing the data correctly based on your API's response structure
-        // If it's { success: true, data: [...] }, then storesResponse.data.data
-        // If it's just [...], then storesResponse.data
         setStores(storesResponse.data.data || storesResponse.data);
 
-        // If 'id' exists, we are in edit mode: fetch product data
         if (id) {
-          const productResponse = await axiosInstance.get(
-            `/products/${id}`, // Use relative path with axiosInstance
-            {
-              headers: { Authorization: `Bearer ${adminToken}` },
-            }
-          );
-          const product: IProduct = productResponse.data;
+          const productResponse =
+            await axiosInstance.get<SingleProductApiResponse>( // Use explicit API response type
+              `/products/${id}`,
+              {
+                headers: { Authorization: `Bearer ${adminToken}` },
+              }
+            );
+          const product: IProductApi = productResponse.data.data; // Ensure this matches your API structure
 
           setName(product.name);
           setDiscountCode(product.discountCode);
           setShopNowUrl(product.shopNowUrl);
-
-          // Populate existing image URLs for display
           setExistingImageUrls(product.images || []);
 
-          // Set selected store if product has one (handle populated vs. ID)
           if (product.store) {
-            // Check if product.store is an object (meaning it's populated)
+            // Refined type guard and explicit cast to IStoreApi
             if (
               typeof product.store === "object" &&
               product.store !== null &&
-              "_id" in product.store
+              (product.store as IStoreApi)._id
             ) {
-              // It's a populated IStore object, use its _id
-              setSelectedStore(String(product.store._id)); // Ensure it's a string
+              setSelectedStore(String((product.store as IStoreApi)._id)); // Access _id safely
             } else {
-              // It's likely just the ObjectId string
-              setSelectedStore(String(product.store)); // Ensure it's a string
+              setSelectedStore(String(product.store)); // It's the ID string
             }
           } else {
-            setSelectedStore(""); // No store selected
+            setSelectedStore("");
           }
         }
       } catch (err: any) {
@@ -90,7 +86,7 @@ const AdminProductFormPage: React.FC = () => {
           "Failed to load data: " + (err.response?.data?.message || err.message)
         );
         if (err.response?.status === 401 || err.response?.status === 403) {
-          navigate("/admin/login"); // Redirect to login if unauthorized
+          navigate("/admin/login");
         }
       } finally {
         setLoading(false);
@@ -98,22 +94,19 @@ const AdminProductFormPage: React.FC = () => {
     };
 
     fetchData();
-  }, [id, navigate, adminToken]); // Added adminToken to dependencies
+  }, [id, navigate, adminToken]);
 
-  // --- Handle form submission ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitLoading(true);
-    setError(""); // Clear previous submission errors
+    setError("");
 
     const formData = new FormData();
     formData.append("name", name);
     formData.append("discountCode", discountCode);
     formData.append("shopNowUrl", shopNowUrl);
-    // Append the selected store for new products and for updating existing product's store if allowed by backend
     if (selectedStore) formData.append("store", selectedStore);
 
-    // Only append images if new ones are selected
     if (images) {
       for (let i = 0; i < images.length; i++) {
         formData.append("images", images[i]);
@@ -122,7 +115,6 @@ const AdminProductFormPage: React.FC = () => {
 
     try {
       if (!selectedStore && !id) {
-        // Only require store for new products, not updates
         setError("Please select a store.");
         setSubmitLoading(false);
         return;
@@ -130,25 +122,16 @@ const AdminProductFormPage: React.FC = () => {
 
       let response;
       if (id) {
-        // --- EDIT PRODUCT ---
-        response = await axiosInstance.put(
-          // Use axiosInstance
-          `/products/${id}`, // Use relative path
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${adminToken}`,
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
+        response = await axiosInstance.put(`/products/${id}`, formData, {
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
         alert("Product updated successfully!");
       } else {
-        // --- ADD NEW PRODUCT ---
-        // For new products, the store ID must be in the URL path as per your API.
         response = await axiosInstance.post(
-          // Use axiosInstance
-          `/products/stores/${selectedStore}/products`, // Use relative path
+          `/products/stores/${selectedStore}/products`,
           formData,
           {
             headers: {
@@ -160,10 +143,9 @@ const AdminProductFormPage: React.FC = () => {
         alert("Product added successfully!");
       }
       console.log("Submission successful:", response.data);
-      navigate("/admin/products"); // Redirect back to product list after success
+      navigate("/admin/products");
     } catch (err: any) {
       console.error("Submission failed:", err.response?.data || err);
-      // More specific error message if available from backend
       setError(
         "Submission failed: " +
           (err.response?.data?.error ||
@@ -178,10 +160,9 @@ const AdminProductFormPage: React.FC = () => {
     }
   };
 
-  // Conditional rendering for loading and error states
   if (loading) return <div className="text-center p-8">Loading form...</div>;
   if (error && !submitLoading && !id)
-    return <div className="text-center p-8 text-red-600">{error}</div>; // Only show fetch error if not submitting and not editing
+    return <div className="text-center p-8 text-red-600">{error}</div>;
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -194,7 +175,6 @@ const AdminProductFormPage: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Store Selection (required for new products) */}
           {!id && (
             <div className="mb-4">
               <label
@@ -212,7 +192,9 @@ const AdminProductFormPage: React.FC = () => {
               >
                 <option value="">-- Select a Store --</option>
                 {stores.map((store) => (
-                  <option key={store._id as string} value={store._id as string}>
+                  <option key={store._id} value={store._id}>
+                    {" "}
+                    {/* _id is directly available on IStoreApi */}
                     {store.name}
                   </option>
                 ))}
@@ -231,7 +213,6 @@ const AdminProductFormPage: React.FC = () => {
             </div>
           )}
 
-          {/* Product Name */}
           <div>
             <label
               htmlFor="name"
@@ -249,7 +230,6 @@ const AdminProductFormPage: React.FC = () => {
             />
           </div>
 
-          {/* Discount Code */}
           <div>
             <label
               htmlFor="discountCode"
@@ -267,7 +247,6 @@ const AdminProductFormPage: React.FC = () => {
             />
           </div>
 
-          {/* Shop Now URL */}
           <div>
             <label
               htmlFor="shopNowUrl"
@@ -285,7 +264,6 @@ const AdminProductFormPage: React.FC = () => {
             />
           </div>
 
-          {/* Image Upload */}
           <div>
             <label
               htmlFor="images"
@@ -306,7 +284,7 @@ const AdminProductFormPage: React.FC = () => {
                 {existingImageUrls.map((url, index) => (
                   <img
                     key={index}
-                    src={`${backendRootUrl}${url}`} // <--- UPDATED: Use backendRootUrl for static assets
+                    src={`${backendRootUrl}${url}`}
                     alt={`Existing Product Image ${index + 1}`}
                     className="w-24 h-24 object-cover rounded shadow"
                   />
@@ -321,7 +299,6 @@ const AdminProductFormPage: React.FC = () => {
             )}
           </div>
 
-          {/* Submit Button and Back to Dashboard Button */}
           <div className="flex justify-between items-center mt-6">
             <Link
               to="/admin/dashboard"

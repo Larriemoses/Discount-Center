@@ -1,86 +1,105 @@
-import React from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+// src/App.tsx
+import { useState } from "react"; // Removed React
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
+import StoreListPage from "./pages/StoreListPage";
+import StoreDetailsPage from "./pages/StoreDetailsPage";
 import AdminLoginPage from "./pages/AdminLogin";
 import AdminDashboardPage from "./pages/AdminDashboard";
 import AdminStoreListPage from "./pages/AdminStoreListPage";
 import AdminStoreFormPage from "./pages/AdminStoreFormPage";
 import AdminProductListPage from "./pages/AdminProductListPage";
 import AdminProductFormPage from "./pages/AdminProductFormPage";
-import Navbar from "./components/Navbar";
-import StoreDetailsPage from "./pages/StoreDetailsPage";
-import StoreListPage from "./pages/StoreListPage";
-import Footer from "./components/Footer"; // Import the Footer component
 import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
-import SubmitStorePage from "./pages/SubmitStorePage"; // Import new page
-import ContactUsPage from "./pages/ContactUsPage"; // Import new page
+import PrivateRoute from "./components/PrivateRoutes"; // Import PrivateRoute
 
 function App() {
-  const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith("/admin");
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(
+    !!localStorage.getItem("adminToken")
+  );
 
   return (
-    <>
-      {/* Conditionally render Navbar only if it's NOT an admin route */}
-      {!isAdminRoute && <Navbar />}
-
+    <Router>
+      <Navbar />
       <Routes>
-        {/* HomePage will now also need pt-[7rem] as it follows a solid Navbar */}
-        {/* IMPORTANT: Ensure HomePage.tsx's main div or container has 'pt-[7rem]' */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/submit-store" element={<SubmitStorePage />} />{" "}
-        {/* New public route */}
-        <Route path="/contact-us" element={<ContactUsPage />} />{" "}
-        {/* New public route */}
-        {/* Admin Routes (no Navbar, no Footer) */}
-        <Route path="/admin/login" element={<AdminLoginPage />} />
-        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-        <Route path="/admin/stores" element={<AdminStoreListPage />} />
-        <Route path="/admin/stores/new" element={<AdminStoreFormPage />} />
-        <Route path="/admin/stores/edit/:id" element={<AdminStoreFormPage />} />
-        <Route path="/admin/products" element={<AdminProductListPage />} />
-        <Route path="/admin/products/new" element={<AdminProductFormPage />} />
-        <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
-        <Route
-          path="/admin/products/edit/:id"
-          element={<AdminProductFormPage />}
-        />
-        {/* Public Routes - All these pages now need a wrapper with pt-[7rem] to clear the fixed Navbar */}
-        <Route
-          path="/today-deals"
-          element={
-            <div className="pt-[7rem] min-h-screen">
-              <div>Today Deals Page Content (Coming Soon)</div>
-            </div>
-          }
-        />
-        <Route
-          path="/stores"
-          element={<StoreListPage />} // Use the new StoreListPage component here
-        />
-        {/* StoreDetailsPage already has pt-[7rem] from the previous update */}
+        <Route path="/stores" element={<StoreListPage />} />
         <Route path="/stores/:slug" element={<StoreDetailsPage />} />
         <Route
-          path="/submit-store"
+          path="/admin/login"
           element={
-            <div className="pt-[7rem] min-h-screen">
-              <div>Submit a Store Page Content (Coming Soon)</div>
-            </div>
+            <AdminLoginPage setIsAdminAuthenticated={setIsAdminAuthenticated} />
+          }
+        />
+
+        {/* Admin Routes */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <PrivateRoute isAuthenticated={isAdminAuthenticated}>
+              <AdminDashboardPage />
+            </PrivateRoute>
           }
         />
         <Route
-          path="/contact-us"
+          path="/admin/stores"
           element={
-            <div className="pt-[7rem] min-h-screen">
-              <div>Contact Us Page Content (Coming Soon)</div>
-            </div>
+            <PrivateRoute isAuthenticated={isAdminAuthenticated}>
+              <AdminStoreListPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/stores/new"
+          element={
+            <PrivateRoute isAuthenticated={isAdminAuthenticated}>
+              <AdminStoreFormPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/stores/edit/:id"
+          element={
+            <PrivateRoute isAuthenticated={isAdminAuthenticated}>
+              <AdminStoreFormPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/products"
+          element={
+            <PrivateRoute isAuthenticated={isAdminAuthenticated}>
+              <AdminProductListPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/products/new"
+          element={
+            <PrivateRoute isAuthenticated={isAdminAuthenticated}>
+              <AdminProductFormPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/products/edit/:id"
+          element={
+            <PrivateRoute isAuthenticated={isAdminAuthenticated}>
+              <AdminProductFormPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/analytics"
+          element={
+            <PrivateRoute isAuthenticated={isAdminAuthenticated}>
+              <AdminAnalyticsPage />
+            </PrivateRoute>
           }
         />
       </Routes>
-
-      {/* Conditionally render Footer only if it's NOT an admin route */}
-      {!isAdminRoute && <Footer />}
-    </>
+    </Router>
   );
 }
 

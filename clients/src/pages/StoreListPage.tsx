@@ -1,22 +1,25 @@
-// client/src/pages/StoreListPage.tsx
+// src/pages/StoreListPage.tsx
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
-import type { IStore } from "@common/interfaces/IStore";
+import type { IStoreApi } from "@common/types/IStoreTypes"; // <--- Changed IStore to IStoreApi and added 'type'
+
+// Define an interface for the API response structure
+interface PublicStoresApiResponse {
+  success: boolean;
+  count: number;
+  data: IStoreApi[]; // The actual array of stores
+}
 
 const StoreListPage: React.FC = () => {
-  const [stores, setStores] = useState<IStore[]>([]);
+  const [stores, setStores] = useState<IStoreApi[]>([]); // <--- Use IStoreApi
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Derive STATIC_FILES_BASE_URL from VITE_BACKEND_URL
-  // VITE_BACKEND_URL is like 'https://discount-center.onrender.com/api'
-  // We want 'https://discount-center.onrender.com/uploads'
   const backendRoot = import.meta.env.VITE_BACKEND_URL.replace("/api", "");
   const STATIC_FILES_BASE_URL = `${backendRoot}/uploads`;
 
-  // Assuming you have a placeholder logo in your public folder for missing images
   const PLACEHOLDER_LOGO_PATH = "/placeholder-logo.png";
 
   useEffect(() => {
@@ -24,7 +27,9 @@ const StoreListPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await axiosInstance.get("/stores/public");
+        const response = await axiosInstance.get<PublicStoresApiResponse>(
+          "/stores/public"
+        );
 
         if (response.data && Array.isArray(response.data.data)) {
           setStores(response.data.data);
@@ -91,7 +96,7 @@ const StoreListPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {stores.map((store) => (
               <Link
-                key={store._id as string}
+                key={store._id} // _id is now correctly typed as string on IStoreApi
                 to={`/stores/${store.slug}`}
                 className="block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden"
               >

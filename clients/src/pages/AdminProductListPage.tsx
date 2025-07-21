@@ -1,164 +1,235 @@
-// client/src/pages/AdminProductListPage.tsx
-
-import React, { useState, useEffect } from "react";
-// import axios from "axios"; // <--- REMOVE this line
-import axiosInstance from "../utils/axiosInstance"; // <--- ADD this line
+// src/pages/AdminProductListPage.tsx
+import { useState, useEffect } from "react";
+import axiosInstance from "../utils/axiosInstance";
 import { Link, useNavigate } from "react-router-dom";
-// import type { IProduct } from "../../../server/src/models/Product";
-import type { IProduct } from "@common/interfaces/IProduct"; // Adjust path if your types file is elsewhere
+import type { IProductApi } from "@common/types/IProductTypes";
 
 const AdminProductListPage: React.FC = () => {
-  const [products, setProducts] = useState<IProduct[]>([]);
+  const [products, setProducts] = useState<IProductApi[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const adminToken = localStorage.getItem("adminToken");
   const navigate = useNavigate();
 
-  // State for custom confirmation modal
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [productIdToDelete, setProductIdToDelete] = useState<string | null>(
-    null
-  );
+  // Define backend base URL for images
+  const backendRootUrl = import.meta.env.VITE_BACKEND_URL.replace("/api", ""); // This is now used
+  const STATIC_FILES_BASE_URL = `${backendRootUrl}/uploads`; // Define this to use backendRootUrl
 
-  // State for custom notifications
-  const [notificationMessage, setNotificationMessage] = useState<string | null>(
-    null
-  );
-  const [notificationType, setNotificationType] = useState<
-    "success" | "error" | null
-  >(null);
-
-  // Helper function to show notifications
-  const showNotification = (
-    message: string,
-    type: "success" | "error" = "success"
-  ) => {
-    setNotificationMessage(message);
-    setNotificationType(type);
-    setTimeout(() => {
-      setNotificationMessage(null);
-      setNotificationType(null);
-    }, 3000); // Notification disappears after 3 seconds
-  };
-
-  // Get admin token for authenticated requests
-  const adminToken = localStorage.getItem("adminToken");
-
-  // Define backend root URL for static assets (images)
-  // Assuming VITE_BACKEND_URL is something like "https://your-app.onrender.com/api"
-  // We need "https://your-app.onrender.com" for serving static files like uploads.
-  const backendRootUrl = import.meta.env.VITE_BACKEND_URL.replace("/api", "");
-
-  // Path for placeholder image (ensure this file exists in your client/public directory)
-  const PLACEHOLDER_IMAGE_PATH = "/placeholder-product.png";
-
+  STATIC_FILES_BASE_URL;
   useEffect(() => {
-    fetchProducts();
-  }, [adminToken, navigate]); // Add adminToken and navigate to dependencies
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        if (!adminToken) {
+          navigate("/admin/login");
+          return;
+        }
 
-  const fetchProducts = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      // Use axiosInstance for API calls
-      const response = await axiosInstance.get("/products", {
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-        },
-      });
-      // Assuming your API returns an object with a 'data' property containing the products array
-      setProducts(response.data.data);
-    } catch (err: any) {
-      console.error("Failed to fetch products:", err);
-      setError(
-        "Failed to load products. " +
-          (err.response?.data?.message || "Server error.")
-      );
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        showNotification(
-          "Session expired or unauthorized. Please log in.",
-          "error"
+        const response = await axiosInstance.get<{
+          success: boolean;
+          data: IProductApi[];
+        }>("/products", {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        });
+        if (response.data && Array.isArray(response.data.data)) {
+          setProducts(response.data.data);
+        } else {
+          setError("Unexpected data format from server.");
+          console.error("Unexpected data format:", response.data);
+        }
+      } catch (err: any) {
+        console.error("Failed to fetch products:", err);
+        setError(
+          "Failed to load products: " +
+            (err.response?.data?.message || err.message)
         );
-        navigate("/admin/login");
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          navigate("/admin/login");
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    fetchProducts();
+  }, [adminToken, navigate]);
+
+  const confirmDelete = (id: string) => {
+    setProductToDelete(id);
+    setShowDeleteConfirm(true);
   };
 
-  // Function to initiate delete confirmation
-  const confirmDelete = (productId: string) => {
-    setProductIdToDelete(productId);
-    setShowConfirmModal(true);
+  const cancelDelete = () => {
+    setProductToDelete(null);
+    setShowDeleteConfirm(false);
   };
 
-  // Function to handle actual deletion after confirmation
-  const handleDelete = async () => {
-    if (!productIdToDelete) return;
+  const executeDelete = async () => {
+    if (!productToDelete) return;
 
-    setShowConfirmModal(false); // Close the modal
     try {
-      // Use axiosInstance for API calls
-      await axiosInstance.delete(`/products/${productIdToDelete}`, {
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-        },
+      if (!adminToken) {
+        navigate("/admin/login");
+        return;
+      }
+      await axiosInstance.delete(`/products/${productToDelete}`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
       });
-      showNotification("Product deleted successfully!", "success");
-      fetchProducts(); // Refresh the list
+      setProducts(
+        products.filter((product) => product._id !== productToDelete)
+      );
+      alert("Product deleted successfully!");
     } catch (err: any) {
       console.error("Failed to delete product:", err);
       setError(
-        "Failed to delete product. " +
-          (err.response?.data?.message || "Server error.")
+        "Failed to delete product: " +
+          (err.response?.data?.message || err.message)
       );
-      showNotification("Failed to delete product. Server error.", "error");
       if (err.response?.status === 401 || err.response?.status === 403) {
         navigate("/admin/login");
       }
     } finally {
-      setProductIdToDelete(null); // Clear the ID
+      cancelDelete();
     }
   };
 
-  if (loading)
-    return <div className="text-center p-8">Loading products...</div>;
-  if (error) return <div className="text-center p-8 text-red-600">{error}</div>;
+  if (loading) {
+    return (
+      <div className="pt-[7rem] min-h-screen flex items-center justify-center">
+        <p className="text-lg text-gray-700">Loading products...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="pt-[7rem] min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
+        <p className="text-lg text-red-600 mb-4">{error}</p>
+        <Link to="/admin/dashboard" className="text-purple-600 hover:underline">
+          Go back to Dashboard
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
-      {/* Custom Notification */}
-      {notificationMessage && (
-        <div
-          className={`
-            fixed top-4 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium text-lg
-            transition-all duration-300 ease-in-out transform
-            ${notificationType === "success" ? "bg-green-500" : "bg-red-500"}
-          `}
-          role="alert"
-        >
-          {notificationMessage}
+    <div className="pt-[2rem] min-h-screen bg-gray-100 p-4 sm:p-8">
+      <div className="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
+          Manage Products
+        </h1>
+        <div className="flex justify-end mb-6">
+          <Link
+            to="/admin/products/new"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300"
+          >
+            Add New Product
+          </Link>
         </div>
-      )}
 
-      {/* Confirmation Modal */}
-      {showConfirmModal && (
+        {products.length === 0 ? (
+          <p className="text-center text-gray-600 text-lg">
+            No products available. Add one above!
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
+              <thead>
+                <tr className="bg-gray-100 border-b border-gray-200">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Store
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Price
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Stock
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Uses
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Success Rate
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((product) => (
+                  <tr
+                    key={product._id}
+                    className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {product.name}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      {typeof product.store === "object" &&
+                      product.store !== null
+                        ? product.store.name
+                        : "N/A"}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      ${product.price?.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      {product.stock}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      {product.totalUses}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      {product.successRate?.toFixed(2)}%
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                      <Link
+                        to={`/admin/products/edit/${product._id}`}
+                        className="text-blue-600 hover:text-blue-900 mr-3"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => confirmDelete(product._id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm w-11/12 text-center">
-            <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
-            <p className="mb-6">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
+            <h3 className="text-lg font-bold mb-4">Confirm Deletion</h3>
+            <p className="text-gray-700 mb-6">
               Are you sure you want to delete this product? This action cannot
               be undone.
             </p>
-            <div className="flex justify-center space-x-4">
+            <div className="flex justify-end space-x-4">
               <button
-                onClick={() => setShowConfirmModal(false)}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300"
+                onClick={cancelDelete}
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-300"
               >
                 Cancel
               </button>
               <button
-                onClick={handleDelete}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+                onClick={executeDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300"
               >
                 Delete
               </button>
@@ -166,229 +237,6 @@ const AdminProductListPage: React.FC = () => {
           </div>
         </div>
       )}
-
-      <div className="max-w-7xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-md">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center sm:text-left">
-            Product Management
-          </h1>
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-            <Link
-              to="/admin/dashboard"
-              className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 text-center"
-            >
-              Back to Dashboard
-            </Link>
-            <Link
-              to="/admin/products/new"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 text-center"
-            >
-              Add New Product
-            </Link>
-          </div>
-        </div>
-
-        {products.length === 0 ? (
-          <p className="text-center text-gray-600">
-            No products found. Add a new one!
-          </p>
-        ) : (
-          <>
-            {/* Table View (for md and larger screens) */}
-            <div className="overflow-x-auto hidden md:block">
-              <table className="min-w-full bg-white border border-gray-200">
-                <thead>
-                  <tr className="bg-gray-200 text-gray-600 uppercase text-xs sm:text-sm leading-normal">
-                    <th className="py-2 px-3 sm:py-3 sm:px-6 text-left">
-                      Image
-                    </th>
-                    <th className="py-2 px-3 sm:py-3 sm:px-6 text-left">
-                      Name
-                    </th>
-                    <th className="py-2 px-3 sm:py-3 sm:px-6 text-left">
-                      Store
-                    </th>
-                    <th className="py-2 px-3 sm:py-3 sm:px-6 text-left">
-                      Code
-                    </th>
-                    <th className="py-2 px-3 sm:py-3 sm:px-6 text-left">
-                      Active
-                    </th>
-                    <th className="py-2 px-3 sm:py-3 sm:px-6 text-center">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="text-gray-700 text-xs sm:text-sm font-light">
-                  {products.map((product) => (
-                    <tr
-                      key={product._id as string}
-                      className="border-b border-gray-200 hover:bg-gray-100"
-                    >
-                      <td className="py-2 px-3 sm:py-3 sm:px-6 text-left">
-                        {product.images && product.images.length > 0 ? (
-                          <img
-                            // <--- UPDATED: Use backendRootUrl for static assets
-                            src={`${backendRootUrl}/uploads/${product.images[0]}`}
-                            alt={product.name}
-                            className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded"
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = PLACEHOLDER_IMAGE_PATH;
-                              e.currentTarget.alt =
-                                "Product image not available";
-                            }}
-                          />
-                        ) : (
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 flex items-center justify-center rounded text-xs text-gray-500">
-                            No Img
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-2 px-3 sm:py-3 sm:px-6 text-left font-medium">
-                        {product.name}
-                      </td>
-                      <td className="py-2 px-3 sm:py-3 sm:px-6 text-left">
-                        {typeof product.store === "object" &&
-                        product.store !== null &&
-                        "name" in product.store
-                          ? (product.store as { name: string }).name
-                          : "N/A"}
-                      </td>
-                      <td className="py-2 px-3 sm:py-3 sm:px-6 text-left">
-                        {product.discountCode}
-                      </td>
-                      <td className="py-2 px-3 sm:py-3 sm:px-6 text-left">
-                        {product.isActive ? (
-                          <span className="bg-green-200 text-green-800 py-1 px-2 rounded-full text-xs">
-                            Yes
-                          </span>
-                        ) : (
-                          <span className="bg-red-200 text-red-800 py-1 px-2 rounded-full text-xs">
-                            No
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 px-3 sm:py-3 sm:px-6 text-center">
-                        <div className="flex item-center justify-center space-x-1 sm:space-x-2">
-                          <Link
-                            to={`/admin/products/edit/${product._id}`}
-                            className="w-4 h-4 sm:w-5 sm:h-5 transform hover:text-purple-500 hover:scale-110"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L7.5 21H3v-4.5L15.232 5.232z"
-                              />
-                            </svg>
-                          </Link>
-                          <button
-                            onClick={() => confirmDelete(product._id as string)}
-                            className="w-4 h-4 sm:w-5 sm:h-5 transform hover:text-red-500 hover:scale-110"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Card View (for screens smaller than md) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
-              {products.map((product) => (
-                <div
-                  key={product._id as string}
-                  className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
-                >
-                  <div className="flex flex-col items-center mb-4">
-                    {product.images && product.images.length > 0 ? (
-                      <img
-                        // <--- UPDATED: Use backendRootUrl for static assets
-                        src={`${backendRootUrl}/uploads/${product.images[0]}`}
-                        alt={product.name}
-                        className="w-24 h-24 object-cover rounded-lg mb-2"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = PLACEHOLDER_IMAGE_PATH;
-                          e.currentTarget.alt = "Product image not available";
-                        }}
-                      />
-                    ) : (
-                      <div className="w-24 h-24 bg-gray-200 flex items-center justify-center rounded-lg mb-2 text-sm text-gray-500">
-                        No Image
-                      </div>
-                    )}
-                    <h3 className="text-lg font-bold text-gray-800 text-center">
-                      {product.name}
-                    </h3>
-                  </div>
-                  <div className="text-gray-700 text-sm space-y-1">
-                    <p>
-                      <strong>Store:</strong>{" "}
-                      {typeof product.store === "object" &&
-                      product.store !== null &&
-                      "name" in product.store
-                        ? (product.store as { name: string }).name
-                        : "N/A"}
-                    </p>
-                    <p>
-                      <strong>Code:</strong> {product.discountCode}
-                    </p>
-                    <p>
-                      <strong>Active:</strong>{" "}
-                      {product.isActive ? (
-                        <span className="bg-green-200 text-green-800 py-0.5 px-2 rounded-full text-xs">
-                          Yes
-                        </span>
-                      ) : (
-                        <span className="bg-red-200 text-red-800 py-0.5 px-2 rounded-full text-xs">
-                          No
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex justify-center mt-4 space-x-2">
-                    <Link
-                      to={`/admin/products/edit/${product._id}`}
-                      className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg text-xs"
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => confirmDelete(product._id as string)}
-                      className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg text-xs"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
     </div>
   );
 };

@@ -1,85 +1,85 @@
-// client/src/pages/AdminLogin.tsx
+// src/pages/AdminLoginPage.tsx
 
-import React, { useState } from "react";
-// import axios from "axios"; // <--- REMOVE this import
-import axiosInstance from "../utils/axiosInstance"; // <--- ADD this import
+import { useState } from "react";
+import axiosInstance from "../utils/axiosInstance";
 import { useNavigate } from "react-router-dom";
 
-const AdminLogin: React.FC = () => {
-  const [username, setUsername] = useState("");
+// 1. Define the props interface
+interface AdminLoginPageProps {
+  setIsAdminAuthenticated: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+// 2. Apply the props interface to the functional component
+const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
+  setIsAdminAuthenticated,
+}) => {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError(null);
 
     try {
-      // Use axiosInstance and a relative path
-      const response = await axiosInstance.post(
-        "/auth/admin/login", // The baseURL from axiosInstance handles the 'https://discount-center.onrender.com/api' part
-        {
-          username,
-          password,
-        }
-      );
+      const response = await axiosInstance.post("/auth/admin/login", {
+        email,
+        password,
+      });
 
-      const { token, username: loggedInUsername, role } = response.data;
-
-      localStorage.setItem("adminToken", token);
-      localStorage.setItem("adminUsername", loggedInUsername);
-      localStorage.setItem("adminRole", role);
-
-      console.log("Login successful!", response.data);
-      navigate("/admin/dashboard");
+      if (response.data && response.data.token) {
+        localStorage.setItem("adminToken", response.data.token);
+        setIsAdminAuthenticated(true); // Update authentication state in App.tsx
+        navigate("/admin/dashboard"); // Redirect to admin dashboard
+      } else {
+        setError("Login failed: No token received.");
+      }
     } catch (err: any) {
       console.error("Login error:", err);
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message);
-      } else {
-        setError("Login failed. Please check your credentials and try again.");
-      }
+      setError(
+        err.response?.data?.message || "Login failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
           Admin Login
-        </h2>
-        <form onSubmit={handleSubmit}>
-          {error && (
-            <div
-              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
-              role="alert"
-            >
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
-          <div className="mb-4">
+        </h1>
+        {error && (
+          <div
+            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
+            role="alert"
+          >
+            <strong className="font-bold">Error!</strong>
+            <span className="block sm:inline"> {error}</span>
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
             <label
-              htmlFor="username"
+              htmlFor="email"
               className="block text-gray-700 text-sm font-bold mb-2"
             >
-              Username:
+              Email:
             </label>
             <input
-              type="text"
-              id="username"
+              type="email"
+              id="email"
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={loading}
             />
           </div>
-          <div className="mb-6">
+          <div>
             <label
               htmlFor="password"
               className="block text-gray-700 text-sm font-bold mb-2"
@@ -89,26 +89,23 @@ const AdminLogin: React.FC = () => {
             <input
               type="password"
               id="password"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={loading}
             />
           </div>
-          <div className="flex items-center justify-between">
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
-              disabled={loading}
-            >
-              {loading ? "Logging In..." : "Login"}
-            </button>
-          </div>
+          <button
+            type="submit"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg w-full focus:outline-none focus:shadow-outline transition duration-300"
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Login"}
+          </button>
         </form>
       </div>
     </div>
   );
 };
 
-export default AdminLogin;
+export default AdminLoginPage;
