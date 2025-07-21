@@ -14,4 +14,6 @@ export const connectDB = async () => {
     process.exit(1); // Exit process with failure
   }
   console.log("JWT_SECRET from .env:", process.env.JWT_SECRET);
+
+  console.log("🔍 MongoDB URI:", MONGODB_URI); // Add before connect
 };
