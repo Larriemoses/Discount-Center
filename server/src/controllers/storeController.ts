@@ -2,7 +2,7 @@
 
 import { Request, Response, NextFunction } from "express";
 import asyncHandler from "../middleware/asyncHandler";
-import Store, { IStore } from "../models/Store";
+import Store, { IStoreDocument } from "../models/Store"; // <--- CHANGE HERE: Import IStoreDocument
 import slugify from "slugify";
 import path from "path";
 import fs from "fs";
@@ -151,7 +151,8 @@ export const createStore = asyncHandler(
 
     const logoFilename = req.file ? req.file.filename : "no-photo.jpg";
 
-    const newStore: IStore = new Store({
+    const newStore: IStoreDocument = new Store({
+      // <--- CHANGE HERE: Use IStoreDocument
       name,
       description,
       slug,
@@ -179,7 +180,7 @@ export const updateStore = asyncHandler(
     let { slug } = req.body;
     const storeId = req.params.id;
 
-    let store = (await Store.findById(storeId)) as IStore | null;
+    let store = (await Store.findById(storeId)) as IStoreDocument | null; // <--- CHANGE HERE: Use IStoreDocument
 
     if (!store) {
       if (req.file) {
@@ -242,7 +243,7 @@ export const updateStore = asyncHandler(
 export const deleteStore = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const storeId = req.params.id;
-    const store = (await Store.findById(storeId)) as IStore | null;
+    const store = (await Store.findById(storeId)) as IStoreDocument | null; // <--- CHANGE HERE: Use IStoreDocument
 
     if (!store) {
       return next(new ErrorResponse("Store not found", 404));
