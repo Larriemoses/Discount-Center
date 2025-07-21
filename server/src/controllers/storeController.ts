@@ -15,6 +15,7 @@ interface CustomRequest extends Request {
 }
 
 // Helper function to delete files
+
 const deleteFile = (filePath: string) => {
   const normalizedFilePath = filePath.startsWith("/uploads/")
     ? filePath.substring("/uploads/".length)
