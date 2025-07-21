@@ -1,9 +1,8 @@
-// Discount-Center/server/tsconfig.json
 {
   "compilerOptions": {
     "target": "es2016",
-    "module": "commonjs", // Keep this for Node.js backend
-    // "rootDir": "./src",  <-- THIS LINE SHOULD BE REMOVED
+    "module": "commonjs",
+    "rootDir": "../",
     "outDir": "./dist",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -18,7 +17,7 @@
   "exclude": [
     "node_modules",
     "dist",
-    "../client", // <--- CRITICAL ADDITION
-    "../client/**/*" // <--- CRITICAL ADDITION
+    "../client", // ✅ Still important for separation
+    "../client/**/*"
   ]
 }
