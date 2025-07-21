@@ -1,6 +1,7 @@
 // client/src/pages/ContactUsPage.tsx
 import React, { useState } from "react";
-import axios from "axios";
+// import axios from "axios"; // <--- REMOVE this line
+import axiosInstance from "../utils/AxiosInstance"; // <--- ADD this line
 import { Link } from "react-router-dom";
 
 const ContactUsPage: React.FC = () => {
@@ -20,7 +21,8 @@ const ContactUsPage: React.FC = () => {
     setError(null);
 
     try {
-      await axios.post("http://localhost:5000/api/public/contact", {
+      // <--- UPDATED: Use axiosInstance for the API call
+      await axiosInstance.post("/public/contact", {
         name,
         email,
         subject,

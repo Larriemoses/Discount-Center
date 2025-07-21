@@ -1,7 +1,9 @@
 // client/src/components/Navbar.tsx
+
 import React, { useState, useEffect } from "react";
-import { Link, NavLink } from "react-router-dom"; // Keep NavLink for other items, import Link
-import axios from "axios";
+import { Link, NavLink } from "react-router-dom";
+// import axios from "axios"; // Remove this line
+import axiosInstance from "../utils/AxiosInstance"; // Add this line
 import type { IStore } from "../../../server/src/models/Store";
 
 const Navbar: React.FC = () => {
@@ -11,17 +13,18 @@ const Navbar: React.FC = () => {
   const [loadingStores, setLoadingStores] = useState(true);
   const [storesError, setStoresError] = useState("");
 
+  // This Cloudinary URL is fine as it's an external asset, not served by your backend
   const LOGO_URL =
     "https://res.cloudinary.com/dvl2r3bdw/image/upload/v1752540945/image-removebg-preview_uyqjbj.png";
 
   useEffect(() => {
     const fetchPublicStores = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:5000/api/stores/public"
-        );
+        // --- UPDATED: Use axiosInstance instead of direct axios call ---
+        const response = await axiosInstance.get("/stores/public");
         setPublicStores(response.data.data);
       } catch (err: any) {
+        // Use 'any' for simpler error handling
         console.error("Failed to fetch public stores for navbar:", err);
         setStoresError("Failed to load stores.");
       } finally {
@@ -42,28 +45,33 @@ const Navbar: React.FC = () => {
     } hover:text-[#796cf5]`;
 
   // Define a common class for the Today Deals link, as it won't use NavLink's isActive
-  const getTodayDealsLinkClasses = "transition duration-300 text-black hover:text-[#796cf5]";
+  const getTodayDealsLinkClasses =
+    "transition duration-300 text-black hover:text-[#796cf5]";
 
   const navClasses = "relative w-full z-30 bg-white py-1 shadow-md";
 
   // Function to handle "Today Deals" click for scrolling
-  const handleTodayDealsClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleTodayDealsClick = (
+    event: React.MouseEvent<HTMLAnchorElement>
+  ) => {
     closeAllMenus();
     event.preventDefault(); // Prevent default Link navigation immediately
 
     // Manually set the hash to trigger the browser's scroll behavior.
     // If already on the homepage with the #top-deals hash, this will force a re-scroll.
-    if (window.location.pathname === '/' && window.location.hash === '#top-deals') {
-      const targetElement = document.getElementById('top-deals');
+    if (
+      window.location.pathname === "/" &&
+      window.location.hash === "#top-deals"
+    ) {
+      const targetElement = document.getElementById("top-deals");
       if (targetElement) {
-        targetElement.scrollIntoView({ behavior: 'smooth' });
+        targetElement.scrollIntoView({ behavior: "smooth" });
       }
     } else {
       // If not on the homepage or not at the #top-deals hash, navigate and set hash
-      window.location.href = '/#top-deals';
+      window.location.href = "/#top-deals";
     }
   };
-
 
   return (
     <nav className={navClasses}>

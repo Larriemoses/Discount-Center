@@ -1,7 +1,8 @@
 // client/src/pages/AdminAnalyticsPage.tsx
 
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+// import axios from "axios"; // <--- REMOVE this import
+import axiosInstance from "../utils/AxiosInstance"; // <--- ADD this import
 import { Link, useNavigate } from "react-router-dom";
 import {
   BarChart,
@@ -56,9 +57,7 @@ const AdminAnalyticsPage: React.FC = () => {
   const navigate = useNavigate();
   const adminToken = localStorage.getItem("adminToken");
 
-  // Define fetchAnalytics using useCallback
   const fetchAnalytics = useCallback(async () => {
-    // Define commonHeaders *inside* useCallback
     const commonHeaders = {
       headers: { Authorization: `Bearer ${adminToken}` },
     };
@@ -73,26 +72,18 @@ const AdminAnalyticsPage: React.FC = () => {
         lowStockRes,
         dailyUsageRes,
       ] = await Promise.all([
-        axios.get(
-          "http://localhost:5000/api/products/analytics/overall-stats",
+        // Use axiosInstance and relative paths
+        axiosInstance.get("/products/analytics/overall-stats", commonHeaders),
+        axiosInstance.get("/products/analytics/top-by-uses", commonHeaders),
+        axiosInstance.get(
+          "/products/analytics/top-by-success-rate",
           commonHeaders
         ),
-        axios.get(
-          "http://localhost:5000/api/products/analytics/top-by-uses",
+        axiosInstance.get(
+          "/products/analytics/low-stock?threshold=5",
           commonHeaders
         ),
-        axios.get(
-          "http://localhost:5000/api/products/analytics/top-by-success-rate",
-          commonHeaders
-        ),
-        axios.get(
-          "http://localhost:5000/api/products/analytics/low-stock?threshold=5",
-          commonHeaders
-        ),
-        axios.get(
-          "http://localhost:5000/api/products/analytics/daily-summary",
-          commonHeaders
-        ),
+        axiosInstance.get("/products/analytics/daily-summary", commonHeaders),
       ]);
 
       setOverallStats(overallRes.data.data);
@@ -112,14 +103,13 @@ const AdminAnalyticsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [adminToken, navigate]); // Now, adminToken is the correct dependency
+  }, [adminToken, navigate]);
 
-  // The useEffect hook
   useEffect(() => {
     fetchAnalytics();
-  }, [fetchAnalytics]); // fetchAnalytics is stable unless adminToken or navigate changes
+  }, [fetchAnalytics]);
 
-  // ... (rest of your component remains the same)
+  // ... (rest of your component remains the same, no changes needed below this line)
 
   // Data for Active vs Inactive Products Pie Chart
   const pieChartData = overallStats

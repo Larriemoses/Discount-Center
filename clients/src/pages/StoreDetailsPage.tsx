@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import axios, { AxiosError } from "axios";
+// import axios, { AxiosError } from "axios"; // <--- REMOVE this line
+import axiosInstance from "../utils/AxiosInstance"; // <--- ADD this line
 import type { IStoreClient, IProductClient } from "../types"; // Adjust path if your types file is elsewhere
 
 const StoreDetailsPage: React.FC = () => {
@@ -17,7 +18,8 @@ const StoreDetailsPage: React.FC = () => {
   const [productsError, setProductsError] = useState("");
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
 
-  const STATIC_FILES_BASE_URL = "http://localhost:5000/uploads";
+  const backendRoot = import.meta.env.VITE_BACKEND_URL.replace("/api", "");
+  const STATIC_FILES_BASE_URL = `${backendRoot}/uploads`;
   const PLACEHOLDER_LOGO_PATH = "/placeholder-logo.png"; // Assuming this is in client/public
 
   const copyToClipboard = (text: string) => {
@@ -43,9 +45,12 @@ const StoreDetailsPage: React.FC = () => {
     action: "copy" | "shop"
   ) => {
     try {
-      const response = await axios.post(
-        `http://localhost:5000/api/products/${productId}/interact`,
-        { action }
+      // <--- UPDATED: Use axiosInstance for the API call
+      const response = await axiosInstance.post(
+        `/products/${productId}/interact`,
+        {
+          action,
+        }
       );
       // Destructure only the fields we expect to change from the backend response
       const { _id, totalUses, todayUses } = response.data.data;
@@ -84,8 +89,9 @@ const StoreDetailsPage: React.FC = () => {
       }
       try {
         // Fetch Store Details using slug
-        const storeResponse = await axios.get(
-          `http://localhost:5000/api/stores/by-slug/${slug}`
+        // <--- UPDATED: Use axiosInstance for the API call
+        const storeResponse = await axiosInstance.get(
+          `/stores/by-slug/${slug}`
         );
         // Cast to IStoreClient
         const fetchedStore: IStoreClient = storeResponse.data.data;
@@ -95,21 +101,19 @@ const StoreDetailsPage: React.FC = () => {
         // After fetching store, fetch its products using the store's _id
         if (fetchedStore && fetchedStore._id) {
           try {
-            const productsResponse = await axios.get(
-              `http://localhost:5000/api/products/stores/${fetchedStore._id}/products`
+            // <--- UPDATED: Use axiosInstance for the API call
+            const productsResponse = await axiosInstance.get(
+              `/products/stores/${fetchedStore._id}/products`
             );
             // Cast to IProductClient[]
             setProducts(productsResponse.data as IProductClient[]);
-          } catch (productErr) {
-            const axiosProductError = productErr as AxiosError;
-            console.error(
-              "Failed to fetch products for store:",
-              axiosProductError
-            );
+          } catch (productErr: any) {
+            // Keep as any for direct property access
+            console.error("Failed to fetch products for store:", productErr);
             setProductsError(
               "Failed to load products: " +
-                ((axiosProductError.response?.data as any)?.message ||
-                  axiosProductError.message ||
+                (productErr.response?.data?.message ||
+                  productErr.message ||
                   "Server error.")
             );
           } finally {
@@ -119,23 +123,23 @@ const StoreDetailsPage: React.FC = () => {
           setLoadingProducts(false);
           setProductsError("Could not find store ID to fetch products.");
         }
-      } catch (err) {
-        const axiosError = err as AxiosError;
-        console.error("Failed to fetch store details:", axiosError);
-        if (axiosError.response) {
+      } catch (err: any) {
+        // Keep as any for direct property access
+        console.error("Failed to fetch store details:", err);
+        if (err.response) {
           setError(
-            `Failed to load store details: ${axiosError.response.status} - ${
-              (axiosError.response.data as any)?.message ||
-              axiosError.response.statusText ||
+            `Failed to load store details: ${err.response.status} - ${
+              err.response.data?.message ||
+              err.response.statusText ||
               "Unknown error"
             }`
           );
-        } else if (axiosError.request) {
+        } else if (err.request) {
           setError(
             "Network Error: No response from server. Is the backend running?"
           );
         } else {
-          setError(`Request Error: ${axiosError.message}`);
+          setError(`Request Error: ${err.message}`);
         }
         setLoading(false);
         setLoadingProducts(false);
@@ -248,7 +252,7 @@ const StoreDetailsPage: React.FC = () => {
               <div
                 key={product._id.toString()}
                 className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden
-                          w-full max-w-md p-4 flex flex-col"
+                         w-full max-w-md p-4 flex flex-col"
               >
                 <div>
                   <div className="flex items-center mb-3">
@@ -395,7 +399,7 @@ const StoreDetailsPage: React.FC = () => {
                 </a>
               </li>
               <li>
-                Click here to shop directly on the official {}
+                Click here to shop directly on the official{" "}
                 <a
                   href={getFullUrl(store.mainUrl)}
                   target="_blank"

@@ -1,7 +1,8 @@
 // client/src/pages/AdminProductFormPage.tsx
 
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+// import axios from "axios"; // <--- REMOVE this line
+import axiosInstance from "../utils/AxiosInstance"; // <--- ADD this line
 import { useNavigate, useParams, Link } from "react-router-dom";
 // Only import the types (interfaces) for Product and Store
 import type { IProduct } from "../../../server/src/models/Product";
@@ -26,6 +27,11 @@ const AdminProductFormPage: React.FC = () => {
   const [error, setError] = useState("");
   const [submitLoading, setSubmitLoading] = useState(false); // For form submission
 
+  // Define backend base URL for images
+  // Assuming VITE_BACKEND_URL is something like "https://discount-center.onrender.com/api"
+  // We need "https://discount-center.onrender.com" for static assets.
+  const backendRootUrl = import.meta.env.VITE_BACKEND_URL.replace("/api", "");
+
   // --- Effect to fetch stores and product data (if in edit mode) ---
   useEffect(() => {
     const fetchData = async () => {
@@ -33,8 +39,8 @@ const AdminProductFormPage: React.FC = () => {
       setError(""); // Clear previous errors
       try {
         // Fetch all stores (needed for both add and edit mode to select a store)
-        const storesResponse = await axios.get(
-          "http://localhost:5000/api/stores",
+        const storesResponse = await axiosInstance.get(
+          "/stores", // Use relative path with axiosInstance
           {
             headers: { Authorization: `Bearer ${adminToken}` },
           }
@@ -46,8 +52,8 @@ const AdminProductFormPage: React.FC = () => {
 
         // If 'id' exists, we are in edit mode: fetch product data
         if (id) {
-          const productResponse = await axios.get(
-            `http://localhost:5000/api/products/${id}`,
+          const productResponse = await axiosInstance.get(
+            `/products/${id}`, // Use relative path with axiosInstance
             {
               headers: { Authorization: `Bearer ${adminToken}` },
             }
@@ -78,7 +84,6 @@ const AdminProductFormPage: React.FC = () => {
           } else {
             setSelectedStore(""); // No store selected
           }
-          // Do NOT set state for description, price, category, etc., as they are not needed in the form
         }
       } catch (err: any) {
         console.error("Failed to fetch data:", err);
@@ -94,7 +99,7 @@ const AdminProductFormPage: React.FC = () => {
     };
 
     fetchData();
-  }, [id, navigate, adminToken]);
+  }, [id, navigate, adminToken]); // Added adminToken to dependencies
 
   // --- Handle form submission ---
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,6 +111,8 @@ const AdminProductFormPage: React.FC = () => {
     formData.append("name", name);
     formData.append("discountCode", discountCode);
     formData.append("shopNowUrl", shopNowUrl);
+    // Append the selected store for new products and for updating existing product's store if allowed by backend
+    if (selectedStore) formData.append("store", selectedStore);
 
     // Only append images if new ones are selected
     if (images) {
@@ -125,14 +132,9 @@ const AdminProductFormPage: React.FC = () => {
       let response;
       if (id) {
         // --- EDIT PRODUCT ---
-        // When editing, we typically don't change the store via the URL.
-        // If you allow changing the store of an existing product, append it to FormData.
-        // Otherwise, the backend updates the product by its ID.
-        // If your backend PUT /api/products/:id expects 'store' in body to change it, add this:
-        if (selectedStore) formData.append("store", selectedStore);
-
-        response = await axios.put(
-          `http://localhost:5000/api/products/${id}`,
+        response = await axiosInstance.put(
+          // Use axiosInstance
+          `/products/${id}`, // Use relative path
           formData,
           {
             headers: {
@@ -145,8 +147,9 @@ const AdminProductFormPage: React.FC = () => {
       } else {
         // --- ADD NEW PRODUCT ---
         // For new products, the store ID must be in the URL path as per your API.
-        response = await axios.post(
-          `http://localhost:5000/api/products/stores/${selectedStore}/products`,
+        response = await axiosInstance.post(
+          // Use axiosInstance
+          `/products/stores/${selectedStore}/products`, // Use relative path
           formData,
           {
             headers: {
@@ -304,7 +307,7 @@ const AdminProductFormPage: React.FC = () => {
                 {existingImageUrls.map((url, index) => (
                   <img
                     key={index}
-                    src={`http://localhost:5000${url}`} // Adjust path if needed
+                    src={`${backendRootUrl}${url}`} // <--- UPDATED: Use backendRootUrl for static assets
                     alt={`Existing Product Image ${index + 1}`}
                     className="w-24 h-24 object-cover rounded shadow"
                   />

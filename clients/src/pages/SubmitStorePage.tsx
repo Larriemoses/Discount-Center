@@ -1,6 +1,8 @@
 // client/src/pages/SubmitStorePage.tsx
+
 import React, { useState } from "react";
-import axios from "axios";
+// import axios from "axios"; // Remove this line
+import axiosInstance from "../utils/AxiosInstance"; // Add this line
 import { Link } from "react-router-dom";
 
 const SubmitStorePage: React.FC = () => {
@@ -21,7 +23,8 @@ const SubmitStorePage: React.FC = () => {
     setError(null);
 
     try {
-      await axios.post("http://localhost:5000/api/public/submit-store", {
+      // --- UPDATED: Use axiosInstance instead of direct axios call ---
+      await axiosInstance.post("/public/submit-store", {
         name,
         mainUrl,
         description,
@@ -35,6 +38,7 @@ const SubmitStorePage: React.FC = () => {
       setContactEmail("");
       setContactName("");
     } catch (err: any) {
+      // Use 'any' for simpler error handling without deep type casting
       console.error("Store submission failed:", err.response?.data || err);
       setError(
         "Failed to submit store: " +

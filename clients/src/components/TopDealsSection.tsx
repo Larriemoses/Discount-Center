@@ -10,9 +10,6 @@ interface IStore {
   logo?: string | null;
   slug: string;
   topDealHeadline?: string;
-  // Make sure tagline and mainUrl are here too if they are part of the store object you're fetching
-  // tagline?: string;
-  // mainUrl?: string;
 }
 
 interface IProduct {
@@ -24,8 +21,8 @@ interface IProduct {
   successRate: number;
   todayUses: number;
   store: IStore;
-  likes: number; // Still in interface, but not used in UI
-  dislikes: number; // Still in interface, but not used in UI
+  likes: number;
+  dislikes: number;
   discountType?: string;
   discountValue?: number;
 }
@@ -39,9 +36,8 @@ interface IProductInteractionResponseData {
   dislikes: number;
 }
 
-// Extend React.FC to accept a 'className' prop
 interface TopDealsSectionProps {
-  className?: string; // Add this line
+  className?: string;
 }
 
 const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
@@ -73,10 +69,8 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
   const fetchTopDeals = useCallback(async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/products/top-deals"
+        `${import.meta.env.VITE_BACKEND_URL}/products/top-deals`
       );
-      console.log("Frontend: Initial fetch response data:", response.data.data);
-
       let fetchedDeals: IProduct[] = response.data.data.map((deal: any) => ({
         ...deal,
         usageCount: deal.totalUses,
@@ -89,16 +83,8 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
       const today = getTodayDateString();
 
       if (lastForceResetDate !== today) {
-        console.log(
-          "TopDealsSection: Performing one-time force reset of 'todayUses'."
-        );
-        fetchedDeals = fetchedDeals.map((deal) => ({
-          ...deal,
-          todayUses: 0, // Force reset to 0
-        }));
-        localStorage.setItem(forceResetKey, today); // Mark as done for today
-      } else {
-        console.log("TopDealsSection: One-time force reset already ran today.");
+        fetchedDeals = fetchedDeals.map((deal) => ({ ...deal, todayUses: 0 }));
+        localStorage.setItem(forceResetKey, today);
       }
 
       setTopDeals(fetchedDeals);
@@ -119,25 +105,18 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
     productId: string,
     action: "copy" | "shop"
   ) => {
-    console.log(
-      `Frontend: Attempting interaction for product ID: ${productId}, action: ${action}`
-    );
     try {
       const response = await axios.post<{
         success: boolean;
         data: IProductInteractionResponseData;
-      }>(`http://localhost:5000/api/products/${productId}/interact`, {
+      }>(`${import.meta.env.VITE_BACKEND_URL}/products/${productId}/interact`, {
         action,
       });
 
-      console.log("Frontend: Backend response for interaction:", response.data);
-
       if (response.data.success) {
         const updatedData = response.data.data;
-        console.log("Frontend: Data received for update:", updatedData);
-
-        setTopDeals((prevDeals) => {
-          const newDeals = prevDeals.map((deal) =>
+        setTopDeals((prevDeals) =>
+          prevDeals.map((deal) =>
             deal._id === productId
               ? {
                   ...deal,
@@ -148,17 +127,9 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
                   dislikes: updatedData.dislikes,
                 }
               : deal
-          );
-          console.log(
-            "Frontend: New state after update (affected card):",
-            newDeals.find((d) => d._id === productId)
-          );
-          return newDeals;
-        });
-      } else {
-        console.error(
-          "Frontend: Backend reported success: false for interaction."
+          )
         );
+      } else {
         showNotification(`Action failed: ${action}.`, "error");
       }
     } catch (err) {
@@ -181,7 +152,7 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
         showNotification(`Code "${code}" copied!`);
       })
       .catch((err) => {
-        console.error("Frontend: Failed to copy text to clipboard:", err);
+        console.error("Clipboard copy failed:", err);
         showNotification("Failed to copy code. Please try manually.", "error");
       });
   };
@@ -192,7 +163,8 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
     showNotification("Redirecting to store...", "success");
   };
 
-  const STATIC_FILES_BASE_URL = "http://localhost:5000/uploads";
+  const STATIC_FILES_BASE_URL =
+    import.meta.env.VITE_BACKEND_URL.replace("/api", "") + "/uploads";
   const PLACEHOLDER_LOGO_PATH = "/placeholder-logo.png";
 
   if (loading) {
@@ -234,7 +206,7 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
     <section
       className={`${
         className || ""
-      } pb-12 relative bg-[#ffffff] container mx-auto px-4 sm:px-6 lg:px-8`}
+      } pb-12 relative bg-white container mx-auto px-4 sm:px-6 lg:px-8`}
     >
       <h2 className="text-3xl md:text-4xl font-extrabold text-center text-gray-800 mb-10">
         Top Deals
@@ -242,33 +214,26 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
 
       {notificationMessage && (
         <div
-          className={`
-            fixed top-2 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium text-lg
-            transition-all duration-300 ease-in-out transform
-            ${notificationType === "success" ? "bg-green-500" : "bg-red-500"}
-          `}
+          className={`fixed top-2 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium text-lg transition-all duration-300 ease-in-out transform ${
+            notificationType === "success" ? "bg-green-500" : "bg-red-500"
+          }`}
           role="alert"
         >
           {notificationMessage}
         </div>
       )}
 
-      {/* Changed to flex-col and align-items-center to stack cards vertically and center them */}
       <div className="flex flex-col items-center gap-8">
-        {" "}
-        {/* CHANGED THIS LINE */}
-        {topDeals.map((deal) => {
-          const product = deal;
+        {topDeals.map((product) => {
           const logoSrc =
             product.store?.logo && product.store.logo !== "no-photo.jpg"
               ? `${STATIC_FILES_BASE_URL}/${product.store.logo}`
               : PLACEHOLDER_LOGO_PATH;
 
           return (
-            // Each card needs a defined width to be centered effectively
             <div
               key={product._id}
-              className="bg-white p-6 rounded-lg shadow-md border border-gray-200 flex flex-col w-full max-w-sm" // max-w-sm helps control card width
+              className="bg-white p-6 rounded-lg shadow-md border border-gray-200 flex flex-col w-full max-w-sm"
             >
               <div className="flex flex-col items-start mb-4">
                 {product.store?.logo &&
@@ -279,9 +244,6 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
                       alt={`${product.store.name} Logo`}
                       className="w-20 h-auto object-contain mb-1"
                       onError={(e) => {
-                        console.error(
-                          `Failed to load image: ${e.currentTarget.src}. Attempting fallback.`
-                        );
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = PLACEHOLDER_LOGO_PATH;
                         e.currentTarget.alt = "Logo not available";
@@ -294,7 +256,6 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
                     No Logo
                   </div>
                 )}
-
                 {product.store?.topDealHeadline && (
                   <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">
                     {product.store.topDealHeadline}
@@ -336,19 +297,6 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
                   </span>
                   <span className="text-gray-400">•</span>
                   <span className="flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1 text-gray-500"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"></path>
-                      <path
-                        fillRule="evenodd"
-                        d="M.661 10.457A10.007 10.007 0 0110 3c2.474 0 4.778.895 6.551 2.378l1.378-1.378a.5.5 0 01.707 0l1.414 1.414a.5.5 0 010 .707l-1.378 1.378C16.895 14.222 14.591 15.0 12.116 15.0a10.007 10.007 0 01-9.339-5.543zM10 17c-2.474 0-4.778-.895-6.551-2.378l-1.378 1.378a.5.5 0 01-.707 0l-1.414-1.414a.5.5 0 010-.707l1.378-1.378C3.105 5.778 5.409 5.0 7.884 5.0a10.007 10.007 0 019.339 5.543z"
-                        clipRule="evenodd"
-                      ></path>
-                    </svg>
                     {product.usageCount} Used - {product.todayUses} Today
                   </span>
                 </div>

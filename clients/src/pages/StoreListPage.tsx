@@ -1,15 +1,21 @@
+// client/src/pages/StoreListPage.tsx
+
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axios, { AxiosError } from "axios";
-import type { IStore } from "../../../server/src/models/Store"; // Type import for store interface
+import axiosInstance from "../utils/AxiosInstance";
+import type { IStore } from "../../../server/src/models/Store";
 
 const StoreListPage: React.FC = () => {
   const [stores, setStores] = useState<IStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Base URL for static files (logos)
-  const STATIC_FILES_BASE_URL = "http://localhost:5000/uploads";
+  // Derive STATIC_FILES_BASE_URL from VITE_BACKEND_URL
+  // VITE_BACKEND_URL is like 'https://discount-center.onrender.com/api'
+  // We want 'https://discount-center.onrender.com/uploads'
+  const backendRoot = import.meta.env.VITE_BACKEND_URL.replace("/api", "");
+  const STATIC_FILES_BASE_URL = `${backendRoot}/uploads`;
+
   // Assuming you have a placeholder logo in your public folder for missing images
   const PLACEHOLDER_LOGO_PATH = "/placeholder-logo.png";
 
@@ -18,35 +24,30 @@ const StoreListPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        // Fetch public stores from your backend API
-        const response = await axios.get(
-          "http://localhost:5000/api/stores/public"
-        );
+        const response = await axiosInstance.get("/stores/public");
 
-        // Your backend's getPublicStores controller should return { success: true, data: stores }
         if (response.data && Array.isArray(response.data.data)) {
           setStores(response.data.data);
         } else {
           setError("Unexpected data format from server.");
           console.error("Unexpected data format:", response.data);
         }
-      } catch (err) {
-        const axiosError = err as AxiosError;
-        console.error("Failed to fetch public stores:", axiosError);
-        if (axiosError.response) {
+      } catch (err: any) {
+        console.error("Failed to fetch public stores:", err);
+        if (err.response) {
           setError(
-            `Server Error: ${axiosError.response.status} - ${
-              (axiosError.response.data as any)?.message ||
-              axiosError.response.statusText ||
+            `Server Error: ${err.response.status} - ${
+              err.response.data?.message ||
+              err.response.statusText ||
               "Unknown error"
             }`
           );
-        } else if (axiosError.request) {
+        } else if (err.request) {
           setError(
             "Network Error: No response from server. Is the backend running?"
           );
         } else {
-          setError(`Request Error: ${axiosError.message}`);
+          setError(`Request Error: ${err.message}`);
         }
       } finally {
         setLoading(false);
@@ -54,7 +55,7 @@ const StoreListPage: React.FC = () => {
     };
 
     fetchStores();
-  }, []); // Empty dependency array means this runs once on component mount
+  }, []);
 
   if (loading) {
     return (
@@ -76,7 +77,6 @@ const StoreListPage: React.FC = () => {
   }
 
   return (
-    // Add pt-[7rem] to push content below the fixed Navbar
     <div className="pt-[2rem] min-h-[60vh] sm:p-8">
       <div className="max-w-6xl mx-auto bg-white p-6 ">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-8 text-center">
@@ -91,8 +91,8 @@ const StoreListPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {stores.map((store) => (
               <Link
-                key={store._id as string} // Explicitly cast _id to string for the key prop
-                to={`/stores/${store.slug}`} // Link to the store's details page
+                key={store._id as string}
+                to={`/stores/${store.slug}`}
                 className="block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden"
               >
                 <div className="p-4">

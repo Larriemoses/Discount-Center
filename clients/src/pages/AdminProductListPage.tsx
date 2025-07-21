@@ -1,7 +1,8 @@
 // client/src/pages/AdminProductListPage.tsx
 
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+// import axios from "axios"; // <--- REMOVE this line
+import axiosInstance from "../utils/AxiosInstance"; // <--- ADD this line
 import { Link, useNavigate } from "react-router-dom";
 import type { IProduct } from "../../../server/src/models/Product";
 import type { IStore } from "../../../server/src/models/Store";
@@ -42,22 +43,29 @@ const AdminProductListPage: React.FC = () => {
   // Get admin token for authenticated requests
   const adminToken = localStorage.getItem("adminToken");
 
+  // Define backend root URL for static assets (images)
+  // Assuming VITE_BACKEND_URL is something like "https://your-app.onrender.com/api"
+  // We need "https://your-app.onrender.com" for serving static files like uploads.
+  const backendRootUrl = import.meta.env.VITE_BACKEND_URL.replace("/api", "");
+
   // Path for placeholder image (ensure this file exists in your client/public directory)
   const PLACEHOLDER_IMAGE_PATH = "/placeholder-product.png";
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [adminToken, navigate]); // Add adminToken and navigate to dependencies
 
   const fetchProducts = async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await axios.get("http://localhost:5000/api/products", {
+      // Use axiosInstance for API calls
+      const response = await axiosInstance.get("/products", {
         headers: {
           Authorization: `Bearer ${adminToken}`,
         },
       });
+      // Assuming your API returns an object with a 'data' property containing the products array
       setProducts(response.data.data);
     } catch (err: any) {
       console.error("Failed to fetch products:", err);
@@ -89,14 +97,12 @@ const AdminProductListPage: React.FC = () => {
 
     setShowConfirmModal(false); // Close the modal
     try {
-      await axios.delete(
-        `http://localhost:5000/api/products/${productIdToDelete}`,
-        {
-          headers: {
-            Authorization: `Bearer ${adminToken}`,
-          },
-        }
-      );
+      // Use axiosInstance for API calls
+      await axiosInstance.delete(`/products/${productIdToDelete}`, {
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+      });
       showNotification("Product deleted successfully!", "success");
       fetchProducts(); // Refresh the list
     } catch (err: any) {
@@ -222,7 +228,8 @@ const AdminProductListPage: React.FC = () => {
                       <td className="py-2 px-3 sm:py-3 sm:px-6 text-left">
                         {product.images && product.images.length > 0 ? (
                           <img
-                            src={`http://localhost:5000/uploads/${product.images[0]}`}
+                            // <--- UPDATED: Use backendRootUrl for static assets
+                            src={`${backendRootUrl}/uploads/${product.images[0]}`}
                             alt={product.name}
                             className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded"
                             onError={(e) => {
@@ -318,7 +325,8 @@ const AdminProductListPage: React.FC = () => {
                   <div className="flex flex-col items-center mb-4">
                     {product.images && product.images.length > 0 ? (
                       <img
-                        src={`http://localhost:5000/uploads/${product.images[0]}`}
+                        // <--- UPDATED: Use backendRootUrl for static assets
+                        src={`${backendRootUrl}/uploads/${product.images[0]}`}
                         alt={product.name}
                         className="w-24 h-24 object-cover rounded-lg mb-2"
                         onError={(e) => {

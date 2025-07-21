@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+// import axios from "axios"; // Remove this line
+import axiosInstance from "../utils/AxiosInstance"; // Add this line
 import { Link, useNavigate } from "react-router-dom";
 import type { IStore } from "../../../server/src/models/Store"; // Assuming this path is correct
 
@@ -11,6 +12,9 @@ const AdminStoreListPage: React.FC = () => {
 
   const adminToken = localStorage.getItem("adminToken");
 
+  // Define backend root URL for static assets (logos)
+  const backendRootUrl = import.meta.env.VITE_BACKEND_URL.replace("/api", ""); // Add this line
+
   useEffect(() => {
     fetchStores();
   }, []);
@@ -19,7 +23,8 @@ const AdminStoreListPage: React.FC = () => {
     setLoading(true);
     setError("");
     try {
-      const response = await axios.get("http://localhost:5000/api/stores", {
+      // Use axiosInstance for API calls
+      const response = await axiosInstance.get("/stores", {
         headers: {
           Authorization: `Bearer ${adminToken}`,
         },
@@ -46,7 +51,8 @@ const AdminStoreListPage: React.FC = () => {
       )
     ) {
       try {
-        await axios.delete(`http://localhost:5000/api/stores/${storeId}`, {
+        // Use axiosInstance for API calls
+        await axiosInstance.delete(`/stores/${storeId}`, {
           headers: {
             Authorization: `Bearer ${adminToken}`,
           },
@@ -108,7 +114,8 @@ const AdminStoreListPage: React.FC = () => {
                     {store.logo && store.logo !== "no-photo.jpg" ? (
                       <div className="w-16 h-16 mr-4 flex-shrink-0 bg-gray-200 flex items-center justify-center rounded overflow-hidden">
                         <img
-                          src={`http://localhost:5000/uploads/${store.logo}`}
+                          // Use backendRootUrl for static assets
+                          src={`${backendRootUrl}/uploads/${store.logo}`}
                           alt={store.name}
                           className="w-full h-full object-cover"
                         />
@@ -205,7 +212,8 @@ const AdminStoreListPage: React.FC = () => {
                         {store.logo && store.logo !== "no-photo.jpg" ? (
                           <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded overflow-hidden">
                             <img
-                              src={`http://localhost:5000/uploads/${store.logo}`}
+                              // Use backendRootUrl for static assets
+                              src={`${backendRootUrl}/uploads/${store.logo}`}
                               alt={store.name}
                               className="w-full h-full object-cover"
                             />

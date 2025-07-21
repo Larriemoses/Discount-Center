@@ -1,7 +1,8 @@
 // client/src/pages/AdminStoreFormPage.tsx
 
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+// import axios from "axios"; // <--- REMOVE this line
+import axiosInstance from "../utils/AxiosInstance"; // <--- ADD this line
 import { useNavigate, useParams, Link } from "react-router-dom";
 import type { IStore } from "../../../server/src/models/Store"; // Corrected type-only import
 
@@ -10,13 +11,18 @@ const AdminStoreFormPage: React.FC = () => {
   const navigate = useNavigate();
   const adminToken = localStorage.getItem("adminToken");
 
+  // Define backend root URL for static assets (logos)
+  // Assuming VITE_BACKEND_URL is something like "https://your-app.onrender.com/api"
+  // We need "https://your-app.onrender.com" for serving static files like uploads.
+  const backendRootUrl = import.meta.env.VITE_BACKEND_URL.replace("/api", ""); // <--- ADD this line
+
   // Form state for store fields
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [slug, setSlug] = useState("");
   const [topDealHeadline, setTopDealHeadline] = useState("");
   const [tagline, setTagline] = useState("");
-  const [mainUrl, setMainUrl] = useState(""); // <--- NEW STATE FOR mainUrl
+  const [mainUrl, setMainUrl] = useState("");
   const [logo, setLogo] = useState<File | null>(null); // For new logo file
   const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null); // For logo already on the server
 
@@ -33,12 +39,10 @@ const AdminStoreFormPage: React.FC = () => {
       try {
         if (id) {
           // If 'id' exists, we are in edit mode: fetch store data
-          const response = await axios.get(
-            `http://localhost:5000/api/stores/${id}`,
-            {
-              headers: { Authorization: `Bearer ${adminToken}` },
-            }
-          );
+          // <--- UPDATED: Use axiosInstance
+          const response = await axiosInstance.get(`/stores/${id}`, {
+            headers: { Authorization: `Bearer ${adminToken}` },
+          });
           const store: IStore = response.data.data; // Access data property if your API returns { success: true, data: store }
 
           setName(store.name);
@@ -46,7 +50,7 @@ const AdminStoreFormPage: React.FC = () => {
           setSlug(store.slug);
           setTopDealHeadline(store.topDealHeadline || "");
           setTagline(store.tagline || "");
-          setMainUrl(store.mainUrl || ""); // <--- Set existing mainUrl
+          setMainUrl(store.mainUrl || "");
           setExistingLogoUrl(
             store.logo && store.logo !== "no-photo.jpg"
               ? `/uploads/${store.logo}`
@@ -82,7 +86,7 @@ const AdminStoreFormPage: React.FC = () => {
     formData.append("slug", slug);
     formData.append("topDealHeadline", topDealHeadline);
     formData.append("tagline", tagline);
-    formData.append("mainUrl", mainUrl); // <--- APPEND NEW FIELD: mainUrl
+    formData.append("mainUrl", mainUrl);
 
     if (logo) {
       formData.append("logo", logo); // Append new logo file
@@ -100,7 +104,8 @@ const AdminStoreFormPage: React.FC = () => {
     try {
       if (id) {
         // --- EDIT STORE ---
-        await axios.put(`http://localhost:5000/api/stores/${id}`, formData, {
+        // <--- UPDATED: Use axiosInstance
+        await axiosInstance.put(`/stores/${id}`, formData, {
           headers: {
             Authorization: `Bearer ${adminToken}`,
             "Content-Type": "multipart/form-data", // Important for file uploads
@@ -109,7 +114,8 @@ const AdminStoreFormPage: React.FC = () => {
         alert("Store updated successfully!");
       } else {
         // --- ADD NEW STORE ---
-        await axios.post(`http://localhost:5000/api/stores`, formData, {
+        // <--- UPDATED: Use axiosInstance
+        await axiosInstance.post(`/stores`, formData, {
           headers: {
             Authorization: `Bearer ${adminToken}`,
             "Content-Type": "multipart/form-data", // Important for file uploads
@@ -282,7 +288,8 @@ const AdminStoreFormPage: React.FC = () => {
               <div className="mt-2">
                 <p className="text-sm text-gray-600">Current Logo:</p>
                 <img
-                  src={`http://localhost:5000${existingLogoUrl}`}
+                  // <--- UPDATED: Use backendRootUrl for static assets
+                  src={`${backendRootUrl}${existingLogoUrl}`}
                   alt="Existing Store Logo"
                   className="w-24 h-24 object-contain rounded-full shadow"
                 />
