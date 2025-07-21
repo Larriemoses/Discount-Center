@@ -1,236 +1,318 @@
-// src/components/Navbar.tsx
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+// client/src/components/Navbar.tsx
+
+import React, { useState, useEffect } from "react";
+import { Link, NavLink } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
-import type { IStoreApi } from "@common/types/IStoreTypes"; // <--- Changed IStore to IStoreApi and added 'type'
+import type { IStoreApi } from "@common/types/IStoreTypes"; // <--- CHANGE HERE: Import IStoreApi
 
 const Navbar: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [stores, setStores] = useState<IStoreApi[]>([]); // <--- Use IStoreApi
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isStoreDropdownOpen, setIsStoreDropdownOpen] = useState(false);
+  const [publicStores, setPublicStores] = useState<IStoreApi[]>([]); // <--- CHANGE HERE: Use IStoreApi
   const [loadingStores, setLoadingStores] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [storesError, setStoresError] = useState("");
+
+  // This Cloudinary URL is fine as it's an external asset, not served by your backend
+  const LOGO_URL =
+    "https://res.cloudinary.com/dvl2r3bdw/image/upload/v1752540945/image-removebg-preview_uyqjbj.png";
 
   useEffect(() => {
-    const fetchStores = async () => {
+    const fetchPublicStores = async () => {
       try {
         setLoadingStores(true);
-        const response = await axiosInstance.get<{
-          success: boolean;
-          data: IStoreApi[];
-        }>("/stores/public");
-        if (response.data && Array.isArray(response.data.data)) {
-          setStores(response.data.data);
-        } else {
-          setError("Unexpected data format for stores.");
-        }
+        // --- UPDATED: Use axiosInstance instead of direct axios call ---
+        const response = await axiosInstance.get<{ data: IStoreApi[] }>(
+          "/stores/public"
+        ); // <--- Explicitly type response data
+        setPublicStores(response.data.data);
       } catch (err: any) {
-        console.error("Failed to fetch stores for navbar:", err);
-        setError("Failed to load stores.");
+        // Use 'any' for simpler error handling
+        console.error("Failed to fetch public stores for navbar:", err);
+        setStoresError("Failed to load stores.");
       } finally {
         setLoadingStores(false);
       }
     };
-    fetchStores();
+    fetchPublicStores();
   }, []);
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+  const closeAllMenus = () => {
+    setIsMobileMenuOpen(false);
+    setIsStoreDropdownOpen(false);
   };
 
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
+  const getNavLinkClasses = ({ isActive }: { isActive: boolean }) =>
+    `transition duration-300 ${
+      isActive ? "text-[#796cf5] font-semibold" : "text-black"
+    } hover:text-[#796cf5]`;
+
+  // Define a common class for the Today Deals link, as it won't use NavLink's isActive
+  const getTodayDealsLinkClasses =
+    "transition duration-300 text-black hover:text-[#796cf5]";
+
+  const navClasses = "relative w-full z-30 bg-white py-1 shadow-md";
+
+  // Function to handle "Today Deals" click for scrolling
+  const handleTodayDealsClick = (
+    event: React.MouseEvent<HTMLAnchorElement>
+  ) => {
+    closeAllMenus();
+    event.preventDefault(); // Prevent default Link navigation immediately
+
+    // Manually set the hash to trigger the browser's scroll behavior.
+    // If already on the homepage with the #top-deals hash, this will force a re-scroll.
+    if (
+      window.location.pathname === "/" &&
+      window.location.hash === "#top-deals"
+    ) {
+      const targetElement = document.getElementById("top-deals");
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      // If not on the homepage or not at the #top-deals hash, navigate and set hash
+      window.location.href = "/#top-deals";
+    }
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <Link to="/" className="text-2xl font-bold text-purple-600">
-                Discount Center
-              </Link>
-            </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <Link
-                to="/"
-                className="border-transparent text-gray-900 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-              >
-                Home
-              </Link>
-              <Link
-                to="/stores"
-                className="border-transparent text-gray-900 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-              >
-                All Stores
-              </Link>
-              <div className="relative">
-                <button
-                  onClick={toggleDropdown}
-                  className="border-transparent text-gray-900 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium focus:outline-none"
-                >
-                  Stores by Category
-                  <svg
-                    className="-mr-1 ml-2 h-5 w-5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-                {isDropdownOpen && (
-                  <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                    <div
-                      className="py-1"
-                      role="menu"
-                      aria-orientation="vertical"
-                      aria-labelledby="options-menu"
-                    >
-                      {loadingStores ? (
-                        <span className="block px-4 py-2 text-sm text-gray-700">
-                          Loading...
-                        </span>
-                      ) : error ? (
-                        <span className="block px-4 py-2 text-sm text-red-500">
-                          {error}
-                        </span>
-                      ) : (
-                        stores.map((store) => (
-                          <Link
-                            key={store._id} // <--- _id is now available on IStoreApi
-                            to={`/stores/${store.slug}`}
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            role="menuitem"
-                            onClick={() => setIsDropdownOpen(false)}
-                          >
-                            {store.name}
-                          </Link>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="-mr-2 flex items-center sm:hidden">
-            <button
-              onClick={toggleMenu}
-              type="button"
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-              aria-controls="mobile-menu"
-              aria-expanded="false"
+    <nav className={navClasses}>
+      <div className="container mx-auto flex justify-between items-center px-4 sm:px-8 lg:px-20">
+        <Link to="/" className="flex items-center" onClick={closeAllMenus}>
+          <img
+            src={LOGO_URL}
+            alt="Discount Center Logo"
+            className="h-20 w-auto"
+          />
+        </Link>
+        <div className="md:hidden">
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="text-[#796cf5] focus:outline-none hover:text-[#5c4ae0] transition duration-300"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              <span className="sr-only">Open main menu</span>
-              {!isMenuOpen ? (
-                <svg
-                  className="block h-6 w-6"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
+              {isMobileMenuOpen ? (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               ) : (
-                <svg
-                  className="block h-6 w-6"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               )}
-            </button>
-          </div>
+            </svg>
+          </button>
         </div>
-      </div>
+        <div className="hidden md:flex space-x-6 items-center">
+          <NavLink
+            to="/"
+            className={getNavLinkClasses}
+            onClick={closeAllMenus}
+            end
+          >
+            Home
+          </NavLink>
+          {/* Changed to Link for custom scroll handling */}
+          <Link
+            to="/#top-deals" // Retain for semantic meaning, but onClick handles navigation
+            className={getTodayDealsLinkClasses} // Use the specific class for this link
+            onClick={handleTodayDealsClick}
+          >
+            Today Deals
+          </Link>
 
-      {isMenuOpen && (
-        <div className="sm:hidden" id="mobile-menu">
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            <Link
-              to="/"
-              className="bg-indigo-50 border-indigo-500 text-indigo-700 block px-3 py-2 rounded-md text-base font-medium"
+          <div className="relative">
+            <button
+              onClick={() => setIsStoreDropdownOpen(!isStoreDropdownOpen)}
+              className="text-black hover:text-[#796cf5] transition duration-300 flex items-center focus:outline-none"
             >
-              Home
-            </Link>
-            <Link
-              to="/stores"
-              className="text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block px-3 py-2 rounded-md text-base font-medium"
-            >
-              All Stores
-            </Link>
-            <div className="relative">
-              <button
-                onClick={toggleDropdown}
-                className="text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block px-3 py-2 rounded-md text-base font-medium w-full text-left focus:outline-none"
+              Store
+              <svg
+                className="ml-1 w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                Stores by Category
-                <svg
-                  className="ml-2 -mr-1 h-5 w-5 inline-block"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-              {isDropdownOpen && (
-                <div className="pl-4 pr-2 py-1 bg-gray-50 rounded-md shadow-inner">
-                  {loadingStores ? (
-                    <span className="block px-4 py-2 text-sm text-gray-700">
-                      Loading...
-                    </span>
-                  ) : error ? (
-                    <span className="block px-4 py-2 text-sm text-red-500">
-                      {error}
-                    </span>
-                  ) : (
-                    stores.map((store) => (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            {isStoreDropdownOpen && (
+              <div className="absolute left-0 mt-2 w-48 bg-white/90 rounded-md shadow-lg py-1 z-20 backdrop-blur-sm">
+                {loadingStores ? (
+                  <div className="px-4 py-2 text-gray-700">
+                    Loading stores...
+                  </div>
+                ) : storesError ? (
+                  <div className="px-4 py-2 text-red-600">{storesError}</div>
+                ) : publicStores.length === 0 ? (
+                  <div className="px-4 py-2 text-gray-700">
+                    No stores found.
+                  </div>
+                ) : (
+                  <>
+                    {publicStores.map((store) => (
                       <Link
-                        key={store._id} // <--- _id is now available on IStoreApi
+                        key={store._id} // _id is now available on IStoreApi
                         to={`/stores/${store.slug}`}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => {
-                          setIsDropdownOpen(false);
-                          setIsMenuOpen(false);
-                        }}
+                        className="block px-4 py-2 text-black hover:bg-gray-100 hover:text-[#796cf5] transition duration-300"
+                        onClick={closeAllMenus}
                       >
                         {store.name}
                       </Link>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
+                    ))}
+                    {/* See More Stores link */}
+                    <Link
+                      to="/stores" // Correctly directs to /stores
+                      className="block px-4 py-2 text-[#796cf5] hover:bg-gray-100 hover:text-[#5c4ae0] transition duration-300 font-semibold border-t border-gray-200 mt-1 pt-2"
+                      onClick={closeAllMenus}
+                    >
+                      See More Stores
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
           </div>
+
+          <NavLink
+            to="/submit-store"
+            className={getNavLinkClasses}
+            onClick={closeAllMenus}
+          >
+            Submit a store
+          </NavLink>
+          <NavLink
+            to="/contact-us"
+            className={getNavLinkClasses}
+            onClick={closeAllMenus}
+          >
+            Contact us
+          </NavLink>
+        </div>
+      </div>
+
+      {isMobileMenuOpen && (
+        <div className="md:hidden mt-4 space-y-2 bg-white/90 p-4 rounded-md shadow-xl backdrop-blur-sm">
+          <NavLink
+            to="/"
+            className={({ isActive }) =>
+              `block py-2 ${
+                isActive ? "text-[#796cf5] font-semibold" : "text-black"
+              } hover:text-[#796cf5] transition duration-300`
+            }
+            onClick={closeAllMenus}
+            end
+          >
+            Home
+          </NavLink>
+          {/* Changed to Link for custom scroll handling in mobile menu */}
+          <Link
+            to="/#top-deals"
+            className="block py-2 text-black hover:text-[#796cf5] transition duration-300"
+            onClick={handleTodayDealsClick}
+          >
+            Today Deals
+          </Link>
+
+          <div className="relative">
+            <button
+              onClick={() => setIsStoreDropdownOpen(!isStoreDropdownOpen)}
+              className="block text-black hover:text-[#796cf5] transition duration-300 py-2 w-full text-left"
+            >
+              Store
+              <svg
+                className="ml-1 w-4 h-4 inline-block"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            {isStoreDropdownOpen && (
+              <div className="mt-2 space-y-1 bg-white/90 rounded-md shadow-inner py-1 z-20 backdrop-blur-sm">
+                {loadingStores ? (
+                  <div className="px-4 py-2 text-gray-700">
+                    Loading stores...
+                  </div>
+                ) : storesError ? (
+                  <div className="px-4 py-2 text-red-600">{storesError}</div>
+                ) : publicStores.length === 0 ? (
+                  <div className="px-4 py-2 text-gray-700">
+                    No stores found.
+                  </div>
+                ) : (
+                  <>
+                    {publicStores.map((store) => (
+                      <Link
+                        key={store._id} // _id is now available on IStoreApi
+                        to={`/stores/${store.slug}`}
+                        className="block px-4 py-2 text-black hover:bg-gray-100 hover:text-[#796cf5] transition duration-300"
+                        onClick={closeAllMenus}
+                      >
+                        {store.name}
+                      </Link>
+                    ))}
+                    {/* See More Stores link */}
+                    <Link
+                      to="/stores" // Correctly directs to /stores
+                      className="block px-4 py-2 text-[#796cf5] hover:bg-gray-100 hover:text-[#5c4ae0] transition duration-300 font-semibold border-t border-gray-200 mt-1 pt-2"
+                      onClick={closeAllMenus}
+                    >
+                      See More Stores
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          <NavLink
+            to="/submit-store"
+            className={({ isActive }) =>
+              `block py-2 ${
+                isActive ? "text-[#796cf5] font-semibold" : "text-black"
+              } hover:text-[#796cf5] transition duration-300`
+            }
+            onClick={closeAllMenus}
+          >
+            Submit a store
+          </NavLink>
+          <NavLink
+            to="/contact-us"
+            className={({ isActive }) =>
+              `block py-2 ${
+                isActive ? "text-[#796cf5] font-semibold" : "text-black"
+              } hover:text-[#796cf5] transition duration-300`
+            }
+            onClick={closeAllMenus}
+          >
+            Contact us
+          </NavLink>
         </div>
       )}
     </nav>
