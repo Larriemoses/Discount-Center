@@ -64,7 +64,7 @@ A fast, responsive affiliate-based deals and coupon web app built with **Next.js
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-username/discount-center.git
+git clone https://github.com/larriemoses/discount-center.git
 
 # Navigate into the directory
 cd discount-center
