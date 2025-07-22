@@ -45,9 +45,8 @@ A fast, responsive affiliate-based deals and coupon web app built with **Next.js
 
 ## 📸 Screenshots
 
-| Home Page                        | Brand Deal Page                     |
-|----------------------------------|-------------------------------------|
-| ![Home](public/screens/home.png) | ![Brand](public/screens/deal.png)   |
+| [Home]<img width="1900" height="505" alt="image" src="https://github.com/user-attachments/assets/da34f5ff-0ac6-4f6d-9775-a82e432d8210" /> | [Brand]<img width="1892" height="955" alt="image" src="https://github.com/user-attachments/assets/14df4b51-166a-4264-b899-6baf36db1755" /> |
+
 
 > _Add actual screenshots to `/public/screens/` and update the image paths above._
 
