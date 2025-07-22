@@ -55,17 +55,37 @@ const getTodayMidnight = () => {
 // Function to apply the daily reset logic to a product
 const applyDailyReset = async (product: IProductDocument) => {
   const today = getTodayMidnight();
-  // Use .toDateString() for date-only comparison, ignoring time
+  // Check if reset is needed
   if (
     !product.lastDailyReset ||
     product.lastDailyReset.toDateString() !== today.toDateString()
   ) {
+    // --- FIX START ---
+    // Before attempting to save, ensure the 'store' field is valid (not null/undefined)
+    // This prevents validation errors if old data is missing a required 'store' ID
+    if (!product.store) {
+      console.warn(
+        `Skipping daily reset save for product ${product.name} (ID: ${product._id}) because 'store' field is missing or invalid.`
+      );
+      return; // Do not attempt to save an invalid product
+    }
+    // --- FIX END ---
+
     console.log(
       `Resetting todayUses for product: ${product.name} (ID: ${product._id})`
     );
     product.todayUses = 0;
-    product.lastDailyReset = today; // Update the reset date
-    await product.save(); // Save the changes to the database
+    product.lastDailyReset = today;
+    try {
+      await product.save();
+    } catch (validationError: any) {
+      // Catch specific validation errors during save in applyDailyReset
+      console.error(
+        `Validation error during daily reset save for product ${product.name} (ID: ${product._id}):`,
+        validationError.message
+      );
+      // Do not re-throw, allow the main controller to continue
+    }
   }
 };
 
@@ -263,21 +283,17 @@ export const updateProduct = asyncHandler(
 
     if (newStoreId) {
       let currentStoreIdString: string;
-      // --- FIX HERE: Use a more robust type guard for product.store ---
       if (
         product.store &&
         typeof product.store === "object" &&
         "_id" in product.store
       ) {
-        // It's a populated IStoreApi object
         currentStoreIdString = String(
           (product.store as mongoose.Types.ObjectId)._id || product.store
         );
       } else if (typeof product.store === "string") {
-        // It's an unpopulated ObjectId string
         currentStoreIdString = product.store;
       } else {
-        // Fallback for other unexpected cases or if it's a direct ObjectId instance
         currentStoreIdString = String(product.store);
       }
 
