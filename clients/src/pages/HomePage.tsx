@@ -60,7 +60,7 @@ const HomePage: React.FC = () => {
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl md:text-5xl lg:text-5xl font-medium text-purple-800 mb-3 sm:mb-6 leading-tight">
-            Oraimo Discount Code: Up To 57% Off + Extra 5% Code 2024 - 2028
+            Oraimo Discount Code: Up To 57% Off + Extra 5% Code 2025 - 2028
           </h1>
           <p className="text-sm sm:text-lg md:text-xl text-gray-700 max-w-3xl">
             This page contains the best Oraimo discount codes, curated by
