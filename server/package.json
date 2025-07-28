@@ -2,9 +2,9 @@
   "name": "server",
   "version": "1.0.0",
   "type": "commonjs",
-  "main": "dist/index.js", 
+  "main": "dist/index.js",
   "scripts": {
-    "build": "tsc -b", 
+    "build": "tsc -b",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts"
   },
@@ -41,6 +41,7 @@
     "multer": "^2.0.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.5",
+    "sitemap": "^8.0.0",
     "slugify": "^1.6.6"
   }
 }

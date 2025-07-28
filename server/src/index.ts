@@ -16,7 +16,8 @@ import { errorHandler } from "./middleware/errorHandler";
 import authRoutes from "./routes/authRoutes";
 import storeRoutes from "./routes/storeRoutes";
 import productRoutes from "./routes/productRoutes";
-import publicRoutes from "./routes/publicRoutes"; // Import public routes
+import publicRoutes from "./routes/publicRoutes";
+import sitemapRoutes from "./routes/sitemapRoutes"; // Import the sitemap routes
 
 // Load environment variables from .env file
 dotenv.config();
@@ -27,9 +28,9 @@ const port = process.env.PORT || 5000;
 // --- START: CORS Configuration ---
 // Get allowed origins from environment variables, split by comma, and trim whitespace.
 // This allows you to set ALLOWED_ORIGINS="http://localhost:5173,https://your-vercel-app.vercel.app"
-const allowedOrigins = (
-  process.env.ALLOWED_ORIGINS || "https://discount-center-p2vm.vercel.app/"
-)
+const allowedOrigins = (process.env.ALLOWED_ORIGINS ||
+  "https://discount-center-p2vm.vercel.app/",
+"https://discountcenterstores.com")
   .split(",")
   .map((url) => url.trim());
 
@@ -107,7 +108,12 @@ app.get("/", (req: Request, res: Response) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/stores", storeRoutes);
 app.use("/api/products", productRoutes);
-app.use("/api/public", publicRoutes); // This was missing in your previous version, now explicitly added.
+app.use("/api/public", publicRoutes);
+
+// Mount the sitemap routes
+// It's common to serve sitemap.xml directly from the root of your API.
+// Make sure this path matches what you put in your robots.txt
+app.use("/", sitemapRoutes); // This will make sitemap.xml accessible at /sitemap.xml
 
 // IMPORTANT: Error Handling Middleware (These must be placed AFTER all your specific routes)
 // 1. Not Found Middleware: Catches any requests that don't match any defined routes
