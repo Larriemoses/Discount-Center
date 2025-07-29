@@ -210,28 +210,6 @@ const WhyChooseUsSection: React.FC<WhyChooseUsSectionProps> = ({
               Facebook
             </motion.a>
             {/* Instagram Button */}
-            <motion.a
-              href="#" // Placeholder link
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-black text-white py-3 px-8 rounded-lg shadow-md hover:opacity-90 transition-opacity flex items-center justify-center w-full sm:w-auto min-w-[120px]"
-              variants={buttonVariants}
-              initial="initial"
-              animate="animate"
-              whileHover="hover"
-              whileTap="tap"
-              transition={{ delay: 0.3, duration: 0.3 }}
-            >
-              <svg
-                className="w-6 h-6 mr-2"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M7.8 2h8.4C18.1 2 20 3.9 20 6.2v8.4c0 2.3-1.9 4.2-4.2 4.2H7.8C5.5 18.8 3.6 16.9 3.6 14.6V6.2C3.6 3.9 5.5 2 7.8 2zm10.7 2.6H6.2c-1.3 0-2.4 1.1-2.4 2.4v8.4c0 1.3 1.1 2.4 2.4 2.4h10.3c1.3 0 2.4-1.1 2.4-2.4V6.2c0-1.3-1.1-2.4-2.4-2.4zM12 7.5c-2.5 0-4.5 2-4.5 4.5s2 4.5 4.5 4.5 4.5-2 4.5-4.5-2-4.5-4.5-4.5zm0 7.4c-1.6 0-2.9-1.3-2.9-2.9s1.3-2.9 2.9-2.9 2.9 1.3 2.9 2.9-1.3 2.9-2.9 2.9zM16.9 5.8c-.6 0-1.1.5-1.1 1.1s.5 1.1 1.1 1.1c.6 0 1.1-.5 1.1-1.1s-.5-1.1-1.1-1.1z" />
-              </svg>
-              Instagram
-            </motion.a>
           </motion.div>
         </div>
       </div>

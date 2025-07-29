@@ -1,0 +1,6 @@
+# robots.txt
+User-agent: *
+Allow: /
+
+# Point to your sitemap on your main domain
+Sitemap: https://discountcenterstores.com/sitemap.xml

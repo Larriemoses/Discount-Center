@@ -24,17 +24,12 @@ const Footer: React.FC = () => {
         {/* Navigation Links - Updated for CSS Grid layout */}
         <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm text-gray-400 w-full max-w-lg mb-4">
           <Link
-            to="/privacy-policy" // Placeholder route, you'll need to create this page
+            to="/privacy-policy" // Corrected route
             className="text-center hover:text-white transition-colors duration-300"
           >
             Privacy Policy
           </Link>
-          <Link
-            to="/about-us" // Placeholder route
-            className="text-center hover:text-white transition-colors duration-300"
-          >
-            About Us
-          </Link>
+
           <Link
             to="/contact-us" // Assuming you have a /contact-us page
             className="text-center hover:text-white transition-colors duration-300"
@@ -42,22 +37,22 @@ const Footer: React.FC = () => {
             Contact Us
           </Link>
           <Link
-            to="/affiliate-disclosure" // Placeholder route
+            to="/affiliate-disclosure" // Corrected route
             className="text-center hover:text-white transition-colors duration-300"
           >
             Affiliate Disclosure
           </Link>
           <Link
-            to="/terms-conditions" // Placeholder route
+            to="/terms-of-use" // Corrected route to match App.tsx
             className="text-center hover:text-white transition-colors duration-300"
           >
-            Terms & Conditions
+            Terms of Use
           </Link>
         </nav>
 
-        {/* Copyright Information */}
+        {/* Copyright Information - Corrected branding */}
         <p className="text-sm text-gray-400 text-center mb-4">
-          Copyright &copy; {currentYear} OraimoDiscountNetwork®.
+          Copyright &copy; {currentYear} Discount Center.
           <br /> All Rights Reserved.
         </p>
       </div>

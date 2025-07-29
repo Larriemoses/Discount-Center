@@ -1,9 +1,11 @@
+// src/pages/HomePage.tsx
 import React, { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import TopDealsSection from "../components/TopDealsSection.tsx";
 import WhyChooseUsSection from "../components/WhyChooseUsSection.tsx";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
+import PageWrapper from "../components/PageWrapper"; // Import PageWrapper
 
 const HomePage: React.FC = () => {
   const location = useLocation();
@@ -32,7 +34,7 @@ const HomePage: React.FC = () => {
       y: 0,
       transition: {
         duration: 0.8,
-        ease: "easeOut",
+        ease: "easeOut" as const, // Corrected: Use 'as const'
       },
     },
   };
@@ -43,20 +45,23 @@ const HomePage: React.FC = () => {
       width: "100%",
       transition: {
         duration: 1.2,
-        ease: "easeOut",
+        ease: "easeOut" as const, // Corrected: Use 'as const'
         delay: 0.5,
       },
     },
   };
 
   return (
-    <>
+    <PageWrapper>
+      {" "}
+      {/* Wrap HomePage content in PageWrapper */}
       {/* Header animation */}
       <motion.div
         initial="hidden"
         animate="visible"
         variants={headerVariants}
-        className="pt-[4rem] sm:pt-[5rem] sm:px-[7rem] px-[1rem] min-h-[calc(50vh-7rem)] bg-white flex flex-col items-start justify-start"
+        // Removed pt-[4rem] sm:pt-[5rem] from here as PageWrapper handles it
+        className="sm:px-[7rem] px-[1rem] min-h-[calc(50vh-7rem)] bg-white flex flex-col items-start justify-start"
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl md:text-5xl lg:text-5xl font-medium text-purple-800 mb-3 sm:mb-6 leading-tight">
@@ -75,7 +80,6 @@ const HomePage: React.FC = () => {
           />
         </div>
       </motion.div>
-
       {/* Top Deals Section */}
       <div
         id="top-deals"
@@ -84,10 +88,9 @@ const HomePage: React.FC = () => {
       >
         <TopDealsSection />
       </div>
-
       {/* Why Choose Us Section */}
       <WhyChooseUsSection className="mt-12 sm:mt-16" />
-    </>
+    </PageWrapper>
   );
 };
 
