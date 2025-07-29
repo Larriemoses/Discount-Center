@@ -148,16 +148,6 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
     showNotification("Redirecting to store...", "success");
   };
 
-  const handleLike = (dealId: string) => {
-    handleInteraction(dealId, "like");
-    showNotification("Liked!", "success");
-  };
-
-  const handleDislike = (dealId: string) => {
-    handleInteraction(dealId, "dislike");
-    showNotification("Disliked!", "error");
-  };
-
   const backendRoot = import.meta.env.VITE_BACKEND_URL.replace("/api", "");
   const STATIC_FILES_BASE_URL = `${backendRoot}/uploads`;
   const PLACEHOLDER_LOGO_PATH = "/placeholder-logo.png";
