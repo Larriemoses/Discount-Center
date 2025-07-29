@@ -31,7 +31,7 @@ const port = process.env.PORT || 5000;
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||
   "http://localhost:5173,https://discount-center-p2vm.vercel.app/,https://discountcenterstores.com"
-) // Corrected: All origins within a single string literal
+) // CORRECTED LINE: All origins are now within a single string literal
   .split(",")
   .map((url) => url.trim());
 
