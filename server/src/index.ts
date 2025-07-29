@@ -28,9 +28,10 @@ const port = process.env.PORT || 5000;
 // --- START: CORS Configuration ---
 // Get allowed origins from environment variables, split by comma, and trim whitespace.
 // This allows you to set ALLOWED_ORIGINS="http://localhost:5173,https://your-vercel-app.vercel.app"
-const allowedOrigins = (process.env.ALLOWED_ORIGINS ||
-  "https://discount-center-p2vm.vercel.app/",
-"https://discountcenterstores.com")
+const allowedOrigins = (
+  process.env.ALLOWED_ORIGINS ||
+  "http://localhost:5173,https://discount-center-p2vm.vercel.app/,https://discountcenterstores.com"
+) // Corrected: All origins within a single string literal
   .split(",")
   .map((url) => url.trim());
 
