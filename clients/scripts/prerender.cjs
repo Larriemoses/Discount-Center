@@ -1,4 +1,4 @@
-// client/scripts/prerender.js
+// client/scripts/prerender.cjs
 
 const { chromium } = require("playwright-chromium");
 const axios = require("axios");
@@ -17,12 +17,15 @@ const BUILD_DIR = path.resolve(__dirname, "../dist"); // Assumes script is in cl
 // Start with static routes, then add dynamic ones.
 const routesToPrerender = [
   "/",
-  "/about",
-  "/contact",
-  "/stores",
-  "/products",
+  "/about", // Assuming you have this
+  "/contact-us",
+  "/stores", // This is the main store listing page
+  "/products", // This is the main product listing page (if you have one)
   "/privacy-policy",
-  "/terms-of-service",
+  "/affiliate-disclosure",
+  "/terms-of-use",
+  "/submit-store",
+  "/today-deals",
   // Add any other static routes your app has
 ];
 
@@ -32,9 +35,15 @@ async function prerender() {
   try {
     // 1. Fetch dynamic routes from your backend
     console.log("Fetching dynamic product and store slugs from backend...");
-    const productsResponse = await axios.get(`${BACKEND_API_URL}/products`);
+
+    // Fetch ALL products from the new public endpoint
+    const productsResponse = await axios.get(
+      `${BACKEND_API_URL}/public/products`
+    );
     const products = productsResponse.data.data; // Adjust based on your API response structure
-    const storesResponse = await axios.get(`${BACKEND_API_URL}/stores`);
+
+    // Fetch stores from the PUBLIC endpoint
+    const storesResponse = await axios.get(`${BACKEND_API_URL}/stores/public`);
     const stores = storesResponse.data.data; // Adjust based on your API response structure
 
     // Add dynamic product paths

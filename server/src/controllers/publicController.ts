@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 import Store from "../models/Store"; // Assuming you might want to save submitted stores to a 'pending' state or similar
+import Product from "../models/Product"; // Re-import Product model
 import sendEmail from "../utils/sendEmail"; // We'll create this utility
 
 // @desc    Submit a new store suggestion
@@ -100,4 +101,25 @@ const contactUs = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
-export { submitStore, contactUs };
+// @desc    Get all products for public display (for prerendering and general listing)
+// @route   GET /api/public/products
+// @access  Public
+const getAllPublicProducts = asyncHandler(
+  async (req: Request, res: Response) => {
+    // Fetch all products. You might want to select specific fields
+    // to reduce payload size if you don't need everything for prerendering.
+    const products = await Product.find({})
+      .select(
+        "name slug images description price oldPrice discountPercentage store category brand isFeatured isBestSeller todayUses"
+      )
+      .populate("store", "name slug logo"); // Populate store details if needed for product pages
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products,
+    });
+  }
+);
+
+export { submitStore, contactUs, getAllPublicProducts }; // <-- Export the new function
