@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 // import axios from "axios"; // <--- REMOVE this import
 import axiosInstance from "../utils/axiosInstance"; // <--- ADD this import
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom"; // <--- ADD 'Link' import here
 
 const AdminLogin: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -104,6 +104,15 @@ const AdminLogin: React.FC = () => {
             >
               {loading ? "Logging In..." : "Login"}
             </button>
+          </div>
+          {/* Add the Forgot Password link here */}
+          <div className="text-center mt-4">
+            <Link
+              to="/forgot-password" // This path corresponds to your ForgotPasswordPage route
+              className="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
+            >
+              Forgot Password?
+            </Link>
           </div>
         </form>
       </div>
