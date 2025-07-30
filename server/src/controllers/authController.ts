@@ -1,10 +1,25 @@
 import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
-import AdminUser from "../models/AdminUser"; // Import your AdminUser model
-import ErrorResponse from "../utils/errorResponse"; // Your custom error class
-import sendEmail from "../utils/sendEmail"; // Your email utility
+import AdminUser from "../models/AdminUser";
+import ErrorResponse from "../utils/errorResponse";
+import sendEmail from "../utils/sendEmail";
 import crypto from "crypto";
-import jwt from "jsonwebtoken"; // For generating JWT tokens
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const JWT_SECRET_FROM_ENV = process.env.JWT_SECRET;
+if (!JWT_SECRET_FROM_ENV) {
+  throw new Error(
+    "FATAL ERROR: JWT_SECRET is not defined in environment variables. Please set it."
+  );
+}
+const JWT_SECRET: string = JWT_SECRET_FROM_ENV;
+
+// @ts-ignore: Temporarily ignore type error for JWT_EXPIRE_DURATION type
+const JWT_EXPIRE_DURATION: jwt.SignOptions["expiresIn"] =
+  process.env.JWT_EXPIRE || "1h";
 
 // @desc    Admin Login
 // @route   POST /api/auth/admin/login
@@ -13,46 +28,39 @@ const login = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { username, password } = req.body;
 
-    // Check for username and password in the request body
     if (!username || !password) {
-      console.log("Login attempt: Missing username or password."); // DEBUG LOG
+      console.log("Login attempt: Missing username or password.");
       return next(
         new ErrorResponse("Please enter a username and password", 400)
       );
     }
 
-    // Find the admin user by username and select the password field
-    // .select('+password') is crucial here to retrieve the hashed password,
-    // as it's typically excluded by default in the model schema (select: false)
     const adminUser = await AdminUser.findOne({ username }).select("+password");
 
-    // If no user is found with the provided username
     if (!adminUser) {
-      console.log(`Login attempt for username '${username}': User not found.`); // DEBUG LOG
-      return next(new ErrorResponse("Invalid credentials", 401)); // 401 Unauthorized
+      console.log(`Login attempt for username '${username}': User not found.`);
+      return next(new ErrorResponse("Invalid credentials", 401));
     }
 
-    // Compare the provided plain-text password with the hashed password in the database
     const isMatch = await adminUser.comparePassword(password);
 
-    // If passwords do not match
     if (!isMatch) {
       console.log(
         `Login attempt for username '${username}': Password mismatch.`
-      ); // DEBUG LOG
-      return next(new ErrorResponse("Invalid credentials", 401)); // 401 Unauthorized
+      );
+      return next(new ErrorResponse("Invalid credentials", 401));
     }
 
-    // If credentials are valid, generate a JWT token for the authenticated admin user
+    // @ts-ignore: Temporarily ignore type error for expiresIn
     const token = jwt.sign(
       { id: adminUser._id, role: adminUser.role },
-      process.env.JWT_SECRET!,
+      JWT_SECRET,
       {
-        expiresIn: process.env.JWT_EXPIRE, // Token expiration time from environment variables
+        expiresIn: JWT_EXPIRE_DURATION,
       }
     );
 
-    console.log(`Login successful for username: ${username}`); // DEBUG LOG
+    console.log(`Login successful for username: ${username}`);
     res.status(200).json({
       success: true,
       token,
@@ -69,29 +77,32 @@ const forgotPassword = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { email } = req.body;
 
-    // Find the admin user by email
     const adminUser = await AdminUser.findOne({ email });
 
-    // If no admin user is found with the provided email
     if (!adminUser) {
       console.log(
         `Forgot password attempt for email '${email}': Admin user not found.`
-      ); // DEBUG LOG
+      );
       return next(
         new ErrorResponse("There is no admin user with that email", 404)
       );
     }
 
-    // Generate a password reset token using the method defined in the AdminUser model
-    const resetToken = adminUser.getResetPasswordToken();
+    if (!adminUser.email) {
+      console.log(
+        `Forgot password attempt for username '${adminUser.username}': Admin user found but has no email configured for password reset.`
+      );
+      return next(
+        new ErrorResponse(
+          "Admin user has no email configured for password reset.",
+          400
+        )
+      );
+    }
 
-    // Save the admin user document with the new token and its expiration.
-    // validateBeforeSave: false is used to bypass schema validation for fields
-    // that might be required during creation but are not being updated here (e.g., password).
+    const resetToken = adminUser.getResetPasswordToken();
     await adminUser.save({ validateBeforeSave: false });
 
-    // Construct the password reset URL for the email
-    // process.env.FRONTEND_URL must be set in your environment variables (e.g., .env file, Render dashboard)
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
     const message = `
@@ -103,20 +114,18 @@ const forgotPassword = asyncHandler(
   `;
 
     try {
-      // Send the email using the sendEmail utility
       await sendEmail({
         to: adminUser.email,
         subject: "Admin Password Reset Token",
         html: message,
       });
 
-      console.log(`Admin password reset email sent to: ${adminUser.email}`); // DEBUG LOG
+      console.log(`Admin password reset email sent to: ${adminUser.email}`);
       res
         .status(200)
         .json({ success: true, data: "Admin password reset email sent" });
     } catch (err: any) {
-      console.error("Error sending admin password reset email:", err); // DEBUG LOG
-      // If email sending fails, clear the token and its expiration to prevent a stale token from being used
+      console.error("Error sending admin password reset email:", err);
       adminUser.resetPasswordToken = undefined;
       adminUser.resetPasswordExpire = undefined;
       await adminUser.save({ validateBeforeSave: false });
@@ -131,48 +140,37 @@ const forgotPassword = asyncHandler(
 const resetPassword = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { password } = req.body;
-    const resetToken = req.params.resettoken; // Get the token from the URL parameters
+    const resetToken = req.params.resettoken;
 
-    // Hash the URL token to compare it with the hashed token stored in the database
     const hashedToken = crypto
       .createHash("sha256")
       .update(resetToken)
       .digest("hex");
 
-    // Find the admin user by the hashed token and ensure the token has not expired
     const adminUser = await AdminUser.findOne({
       resetPasswordToken: hashedToken,
-      resetPasswordExpire: { $gt: Date.now() }, // Token must be greater than current time (not expired)
+      resetPasswordExpire: { $gt: Date.now() },
     });
 
-    // If no admin user is found or the token is invalid/expired
     if (!adminUser) {
       console.log(
         `Reset password attempt: Invalid or expired token '${resetToken}'.`
-      ); // DEBUG LOG
+      );
       return next(new ErrorResponse("Invalid or expired token", 400));
     }
 
-    // Set the new password. The pre-save hook in the AdminUser model will hash this new password.
     adminUser.password = password;
-    // Clear the reset token fields after successful password reset
     adminUser.resetPasswordToken = undefined;
     adminUser.resetPasswordExpire = undefined;
-    await adminUser.save(); // Save the updated admin user document
+    await adminUser.save();
 
     console.log(
       `Admin password for user '${adminUser.username}' reset successfully.`
-    ); // DEBUG LOG
+    );
     res
       .status(200)
       .json({ success: true, data: "Admin password reset successfully" });
   }
 );
 
-// Export the functions to be used in routes
-export {
-  login,
-  forgotPassword,
-  resetPassword,
-  // Add other authentication-related exports here if you have them (e.g., getMe, updateDetails)
-};
+export { login, forgotPassword, resetPassword };

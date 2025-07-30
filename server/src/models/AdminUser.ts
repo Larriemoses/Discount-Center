@@ -1,77 +1,96 @@
 import mongoose, { Schema, Document } from "mongoose";
-import bcrypt from "bcryptjs"; // Import bcrypt for password hashing
-import crypto from "crypto"; // Import crypto for token generation
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 export interface IAdminUser extends Document {
   username: string;
-  password?: string; // Password can be optional if you have social logins
+  password?: string;
+  email?: string;
   role: "admin";
-  resetPasswordToken?: string; // New field for reset token
-  resetPasswordExpire?: Date; // New field for token expiration
-  comparePassword: (candidatePassword: string) => Promise<boolean>; // Method to compare passwords
-  getResetPasswordToken: () => string; // New method to generate reset token
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
+  comparePassword: (enteredPassword: string) => Promise<boolean>;
+  getSignedJwtToken: () => string;
+  getResetPasswordToken: () => string;
 }
 
-// 2. Define the AdminUser schema
 const AdminUserSchema: Schema = new Schema(
   {
     username: {
       type: String,
-      required: true,
+      required: [true, "Please enter a username"],
       unique: true,
       trim: true,
     },
     password: {
       type: String,
-      required: true,
-      minlength: 6, // Enforce a minimum password length
-      select: false, // Don't return password by default in queries
+      required: [true, "Please enter a password"],
+      minlength: [6, "Password must be at least 6 characters"],
+      select: false,
+    },
+    email: {
+      type: String,
+      unique: true,
+      sparse: true,
+      match: [
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+        "Please enter a valid email",
+      ],
     },
     role: {
       type: String,
-      enum: ["admin"], // Define allowed roles
-      default: "admin", // Default role for new users
+      enum: ["admin"],
+      default: "admin",
     },
-    resetPasswordToken: String, // Stores the hashed reset token
-    resetPasswordExpire: Date, // Stores the expiration date of the token
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
   },
-  { timestamps: true } // Adds createdAt and updatedAt fields
+  {
+    timestamps: true,
+  }
 );
 
-// 3. Pre-save hook to hash password before saving
-AdminUserSchema.pre<IAdminUser>("save", async function (next) {
-  // Only hash if the password has been modified or is new
+AdminUserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
-    return next();
+    next();
   }
-  const salt = await bcrypt.genSalt(10); // Generate a salt
-  this.password = await bcrypt.hash(this.password!, salt); // Hash the password
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password as string, salt);
   next();
 });
 
-// 4. Method to compare password (for login)
 AdminUserSchema.methods.comparePassword = async function (
-  candidatePassword: string
-): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.password!);
+  enteredPassword: string
+) {
+  return await bcrypt.compare(enteredPassword, this.password as string);
 };
 
-// 5. Method to generate and hash password reset token
+AdminUserSchema.methods.getSignedJwtToken = function () {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET is not defined!");
+  }
+
+  // @ts-ignore: Temporarily ignore type error for expiresIn
+  return jwt.sign({ id: this._id, role: this.role }, secret, {
+    expiresIn: process.env.JWT_EXPIRE || "1h",
+  });
+};
+
 AdminUserSchema.methods.getResetPasswordToken = function () {
-  // Generate a random token
   const resetToken = crypto.randomBytes(20).toString("hex");
 
-  // Hash the token and set it to resetPasswordToken field
   this.resetPasswordToken = crypto
     .createHash("sha256")
     .update(resetToken)
     .digest("hex");
 
-  // Set token expiration (e.g., 10 minutes from now)
   this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
 
-  return resetToken; // Return the unhashed token to be sent in the email
+  return resetToken;
 };
 
-// 6. Create and export the Mongoose model
-export default mongoose.model<IAdminUser>("AdminUser", AdminUserSchema);
+const AdminUser = mongoose.model<IAdminUser>("AdminUser", AdminUserSchema);
+
+export default AdminUser;
