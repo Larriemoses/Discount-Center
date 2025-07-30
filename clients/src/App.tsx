@@ -1,4 +1,3 @@
-// src/App.tsx
 import { Routes, Route, useLocation } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import AdminLoginPage from "./pages/AdminLogin";
@@ -15,6 +14,10 @@ import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 import SubmitStorePage from "./pages/SubmitStorePage";
 import ContactUsPage from "./pages/ContactUsPage";
 
+// Import new pages for password reset
+import ForgotPasswordPage from "./pages/ForgetPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+
 // Import new pages and the PageWrapper
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import AffiliateDisclosurePage from "./pages/AffiliateDisclosurePage";
@@ -23,17 +26,28 @@ import PageWrapper from "./components/PageWrapper"; // Import the PageWrapper
 
 function App() {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith("/admin");
+  // Update isAdminRoute to also hide Navbar/Footer on password reset pages
+  const isAdminRoute =
+    location.pathname.startsWith("/admin") ||
+    location.pathname === "/forgot-password" ||
+    location.pathname.startsWith("/reset-password/");
 
   return (
     <>
-      {/* Conditionally render Navbar only if it's NOT an admin route */}
+      {/* Conditionally render Navbar only if it's NOT an admin-related route */}
       {!isAdminRoute && <Navbar />}
 
       <Routes>
         {/* Public Routes - All these pages now need a wrapper with pt-[7rem] to clear the fixed Navbar */}
         {/* HomePage is already wrapped internally with PageWrapper */}
         <Route path="/" element={<HomePage />} />
+
+        {/* Password Reset Routes - No Navbar/Footer for these */}
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route
+          path="/reset-password/:resettoken"
+          element={<ResetPasswordPage />}
+        />
 
         {/* SubmitStorePage and ContactUsPage also need PageWrapper */}
         <Route
@@ -61,7 +75,7 @@ function App() {
         />
         <Route path="/terms-of-use" element={<TermsOfUsePage />} />
 
-        {/* Admin Routes (no Navbar, no Footer) */}
+        {/* Admin Routes (no Navbar, no Footer - handled by isAdminRoute check) */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
         <Route path="/admin/stores" element={<AdminStoreListPage />} />
@@ -103,7 +117,7 @@ function App() {
         />
       </Routes>
 
-      {/* Conditionally render Footer only if it's NOT an admin route */}
+      {/* Conditionally render Footer only if it's NOT an admin-related route */}
       {!isAdminRoute && <Footer />}
     </>
   );

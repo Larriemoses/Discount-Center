@@ -1,9 +1,6 @@
-// client/src/pages/AdminLogin.tsx
-
 import React, { useState } from "react";
-// import axios from "axios"; // <--- REMOVE this import
-import axiosInstance from "../utils/axiosInstance"; // <--- ADD this import
-import { useNavigate, Link } from "react-router-dom"; // <--- ADD 'Link' import here
+import axiosInstance from "../utils/axiosInstance";
+import { useNavigate, Link } from "react-router-dom"; // Ensure Link is imported
 
 const AdminLogin: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -18,14 +15,10 @@ const AdminLogin: React.FC = () => {
     setLoading(true);
 
     try {
-      // Use axiosInstance and a relative path
-      const response = await axiosInstance.post(
-        "/auth/admin/login", // The baseURL from axiosInstance handles the 'https://discount-center.onrender.com/api' part
-        {
-          username,
-          password,
-        }
-      );
+      const response = await axiosInstance.post("/auth/admin/login", {
+        username,
+        password,
+      });
 
       const { token, username: loggedInUsername, role } = response.data;
 
@@ -105,7 +98,7 @@ const AdminLogin: React.FC = () => {
               {loading ? "Logging In..." : "Login"}
             </button>
           </div>
-          {/* Add the Forgot Password link here */}
+          {/* Forgot Password Link */}
           <div className="text-center mt-4">
             <Link
               to="/forgot-password" // This path corresponds to your ForgotPasswordPage route

@@ -17,7 +17,8 @@ const submitStore = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // OPTION 1: Just send an email notification to the admin
-  const adminEmail = process.env.ADMIN_EMAIL || "your_admin_email@example.com"; // Set this in your .env
+  const adminEmail =
+    process.env.ADMIN_EMAIL || "discountcenterstores@gmail.com"; // Set this in your .env
   const emailSubject = `New Store Suggestion: ${name}`;
   const emailMessage = `
     A new store has been suggested:
