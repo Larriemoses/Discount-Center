@@ -1,5 +1,4 @@
-// server/src/routes/authRoutes.ts
-import express, { Request, Response, NextFunction } from "express"; // Import Request, Response, NextFunction
+import express, { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import AdminUser, { IAdminUser } from "../models/AdminUser";
 import mongoose from "mongoose";
@@ -70,19 +69,40 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     const { username, password } = req.body;
 
+    // --- START DEBUG LOGS ---
+    console.log(`Login attempt received for username: '${username}'`);
+    if (!username || !password) {
+      console.log(
+        "Login failed: Missing username or password in request body."
+      );
+      return res
+        .status(400)
+        .json({ message: "Please enter a username and password" });
+    }
+    // --- END DEBUG LOGS ---
+
     try {
+      // .select("+password") is crucial to retrieve the hashed password from the DB
       const user = await AdminUser.findOne({ username }).select("+password");
+
       if (!user) {
+        console.log(
+          `Login failed for username '${username}': User not found in DB.`
+        ); // DEBUG LOG
         return res.status(400).json({ message: "Invalid credentials" });
       }
 
       const isMatch = await user.comparePassword(password);
       if (!isMatch) {
+        console.log(
+          `Login failed for username '${username}': Password mismatch.`
+        ); // DEBUG LOG
         return res.status(400).json({ message: "Invalid credentials" });
       }
 
       const token = generateToken(user._id as mongoose.Types.ObjectId);
 
+      console.log(`Login successful for username: ${username}`); // DEBUG LOG
       res.status(200).json({
         message: "Login successful",
         token,
@@ -90,6 +110,10 @@ router.post(
         role: user.role,
       });
     } catch (error) {
+      console.error(
+        `Login attempt for username '${username}' caught an unexpected error:`,
+        error
+      ); // DEBUG LOG
       res.status(500).json({ message: (error as Error).message });
     }
   }
@@ -103,19 +127,16 @@ router.get(
   protect,
   authorize(["admin"]), // Ensure the role matches your AdminUser model's enum
   async (req: CustomRequest, res: Response) => {
-    // <--- Changed from req: Request to req: CustomRequest
     try {
-      // req.user is populated by the 'protect' middleware
       if (!req.user) {
-        // <--- Using req.user here
         return res.status(404).json({ message: "Admin user not found" });
       }
       res.status(200).json({
         message: "Admin details fetched successfully",
         data: {
-          _id: req.user._id, // <--- Using req.user here
-          username: req.user.username, // <--- Using req.user here
-          role: req.user.role, // <--- Using req.user here
+          _id: req.user._id,
+          username: req.user.username,
+          role: req.user.role,
         },
       });
     } catch (error) {

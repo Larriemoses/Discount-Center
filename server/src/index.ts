@@ -26,30 +26,30 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // --- START: CORS Configuration ---
-// Get allowed origins from environment variables, split by comma, and trim whitespace.
-// This allows you to set ALLOWED_ORIGINS="http://localhost:5173,https://your-vercel-app.vercel.app"
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||
-  "http://localhost:5173,https://discount-center-p2vm.vercel.app/,https://discountcenterstores.com"
-) // CORRECTED LINE: All origins are now within a single string literal
+  "http://localhost:5173,https://discount-center-p2vm.vercel.app,https://discountcenterstores.com"
+) // Removed trailing slash from vercel URL for consistency
   .split(",")
-  .map((url) => url.trim());
+  .map((url) => url.trim())
+  .filter((url) => url !== ""); // Filter out any empty strings from splitting
+
+// Add default origins if ALLOWED_ORIGINS environment variable is empty or not set
+if (allowedOrigins.length === 0) {
+  allowedOrigins.push("http://localhost:5173");
+  allowedOrigins.push("https://www.discountcenterstores.com");
+  allowedOrigins.push("https://discountcenterstores.com");
+  // You might want to uncomment and add your Vercel app URL here if it's a source for your frontend
+  // allowedOrigins.push('https://discount-center-p2vm.vercel.app');
+}
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      // Check if the requesting origin is in our allowed list
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}.`;
-        return callback(new Error(msg), false);
-      }
-      return callback(null, true);
-    },
+    origin: allowedOrigins, // <-- SIMPLIFIED: Pass the array directly
     credentials: true, // Important for sending cookies/tokens (like your adminToken)
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // Explicitly allow common HTTP methods
     allowedHeaders: ["Content-Type", "Authorization"], // Explicitly allow common headers
+    optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
   })
 );
 // --- END: CORS Configuration ---
