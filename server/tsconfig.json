@@ -1,25 +1,21 @@
 // Discount-Center/server/tsconfig.json
 {
   "compilerOptions": {
-    "target": "es2016",
+    "target": "es2018", // Updated to a slightly more modern target for Node
     "module": "commonjs",
-    "rootDir": "./src", // <--- CRITICAL CHANGE: Set rootDir to the actual source folder
-    "outDir": "./dist", // <--- Output directly into dist/ relative to server/
+    "rootDir": "./src",
+    "outDir": "./dist",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "baseUrl": "./", // Base for module resolution
+    "baseUrl": "./",
     "paths": {
-      "@common/*": ["../common/src/*"] // Path alias for common
-    }
+      "@common/*": ["../common/src/*"]
+    },
+    "composite": true // <--- ADD THIS LINE: Mark as a composite project
   },
-  "include": [
-    "src/**/*.ts" // <--- CRITICAL CHANGE: Only include server's own source files here
-  ],
-  "references": [
-    // <--- ADD THIS: Use project references for monorepo
-    { "path": "../common" }
-  ],
+  "include": ["src/**/*.ts", "src/**/*.d.ts"],
+  "references": [{ "path": "../common" }],
   "exclude": ["node_modules", "dist", "../client", "../client/**/*"]
 }

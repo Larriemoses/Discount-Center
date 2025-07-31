@@ -8,6 +8,8 @@ import path from "path";
 import fs from "fs";
 import mongoose from "mongoose";
 import slugify from "slugify";
+// You might need to import Multer types directly if the global declaration isn't enough
+// import { Multer } from 'multer'; // <-- Add this if the error persists
 
 // Helper function to delete files from the 'uploads' directory
 const deleteFiles = (filePaths: string[]) => {
@@ -60,16 +62,12 @@ const applyDailyReset = async (product: IProductDocument) => {
     !product.lastDailyReset ||
     product.lastDailyReset.toDateString() !== today.toDateString()
   ) {
-    // --- FIX START ---
-    // Before attempting to save, ensure the 'store' field is valid (not null/undefined)
-    // This prevents validation errors if old data is missing a required 'store' ID
     if (!product.store) {
       console.warn(
         `Skipping daily reset save for product ${product.name} (ID: ${product._id}) because 'store' field is missing or invalid.`
       );
-      return; // Do not attempt to save an invalid product
+      return;
     }
-    // --- FIX END ---
 
     console.log(
       `Resetting todayUses for product: ${product.name} (ID: ${product._id})`
@@ -79,12 +77,10 @@ const applyDailyReset = async (product: IProductDocument) => {
     try {
       await product.save();
     } catch (validationError: any) {
-      // Catch specific validation errors during save in applyDailyReset
       console.error(
         `Validation error during daily reset save for product ${product.name} (ID: ${product._id}):`,
         validationError.message
       );
-      // Do not re-throw, allow the main controller to continue
     }
   }
 };
@@ -97,7 +93,7 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
 
   const updatedProducts = [];
   for (let product of products) {
-    await applyDailyReset(product); // Use the helper
+    await applyDailyReset(product);
     updatedProducts.push(product);
   }
 
@@ -126,7 +122,7 @@ export const getProductsByStore = asyncHandler(
 
     const updatedProducts = [];
     for (let product of products) {
-      await applyDailyReset(product); // Use the helper
+      await applyDailyReset(product);
       updatedProducts.push(product);
     }
 
@@ -149,7 +145,7 @@ export const getProductById = asyncHandler(
       throw new Error("Product not found");
     }
 
-    await applyDailyReset(product); // Use the helper
+    await applyDailyReset(product);
 
     res.status(200).json(product);
   }
@@ -187,8 +183,10 @@ export const createProduct = asyncHandler(
     }
 
     let productImages: string[] = [];
+    // Cast req.files to Express.Multer.File[] to satisfy TypeScript
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-      productImages = req.files.map(
+      productImages = (req.files as Express.Multer.File[]).map(
+        // <-- FIX HERE
         (file: Express.Multer.File) => `/uploads/${file.filename}`
       );
     } else if (store.logo) {
@@ -253,8 +251,10 @@ export const updateProduct = asyncHandler(
     const oldImages = product.images ? [...product.images] : [];
     let newImages: string[] | undefined;
 
+    // Cast req.files to Express.Multer.File[] to satisfy TypeScript
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-      newImages = req.files.map(
+      newImages = (req.files as Express.Multer.File[]).map(
+        // <-- FIX HERE
         (file: Express.Multer.File) => `/uploads/${file.filename}`
       );
       if (oldImages.length > 0) {
