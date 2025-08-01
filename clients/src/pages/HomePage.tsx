@@ -63,8 +63,8 @@ const HomePage: React.FC = () => {
         // Removed pt-[4rem] sm:pt-[5rem] from here as PageWrapper handles it
         className="sm:px-[7rem] px-[1rem] min-h-[calc(50vh-7rem)] bg-white flex flex-col items-start justify-start"
       >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl md:text-5xl lg:text-5xl font-medium text-purple-800 mb-3 sm:mb-6 leading-tight">
+        <div className="container mx-auto px-2 sm:px-6 lg:px-8">
+          <h1 className="text-3xl md:text-5xl lg:text-5xl font-medium text-purple-800 mb-3 sm:mb-6 leading-tight text-left">
             Oraimo Discount Code: Up To 57% Off + Extra 5% Code 2025 - 2028
           </h1>
           <p className="text-sm sm:text-lg md:text-xl text-gray-700 max-w-3xl">

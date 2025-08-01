@@ -1,62 +1,68 @@
 // server/src/utils/sendEmail.ts
-import nodemailer from "nodemailer";
+
+import nodemailer, { Transporter } from "nodemailer";
 import dotenv from "dotenv";
 
-dotenv.config({ path: "./.env" }); // Ensure .env variables are loaded for this utility
+dotenv.config();
 
+// Define a type for the email options to ensure type safety
 interface EmailOptions {
   to: string;
   subject: string;
   html: string;
-  replyTo?: string; // Optional: for contact forms, allows recipient to reply directly to the sender
+  replyTo?: string; // replyTo is optional
 }
 
 /**
- * Sends an email using Nodemailer and configured SMTP settings.
+ * Utility function to send an email using Nodemailer.
  *
- * Ensure the following environment variables are set in your .env file:
- * EMAIL_HOST (e.g., smtp.mailtrap.io or smtp.sendgrid.net)
- * EMAIL_PORT (e.g., 2525 for Mailtrap, 587 for TLS, 465 for SSL)
- * EMAIL_SECURE (true for 465, false for other ports like 587, 2525)
- * EMAIL_USERNAME (Your email account username)
- * EMAIL_PASSWORD (Your email account password or app-specific password)
- * EMAIL_FROM (e.g., "Your App Name <no-reply@yourdomain.com>")
- * ADMIN_EMAIL (e.g., your_admin_inbox@example.com - where submissions go)
+ * @param options The email options object.
+ * @param options.to The recipient's email address.
+ * @param options.subject The subject line of the email.
+ * @param options.html The HTML body of the email.
+ * @param options.replyTo The email address to which replies should be sent (optional).
  */
 const sendEmail = async (options: EmailOptions) => {
+  // Check if all necessary environment variables are set
+  if (
+    !process.env.SMTP_HOST ||
+    !process.env.SMTP_PORT ||
+    !process.env.SMTP_USER ||
+    !process.env.SMTP_PASSWORD
+  ) {
+    throw new Error(
+      "SMTP configuration is incomplete. Please check your .env file."
+    );
+  }
+
   // Create a transporter object using the default SMTP transport
-  const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT || "587"),
-    secure: process.env.EMAIL_SECURE === "true", // Use 'true' for port 465 (SSL), 'false' for other ports (like 587, 2525 for TLS/STARTTLS)
+  const transporter: Transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT as string, 10),
+    secure: process.env.SMTP_PORT === "465", // true for 465, false for other ports
     auth: {
-      user: process.env.EMAIL_USERNAME,
-      pass: process.env.EMAIL_PASSWORD,
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD,
     },
-    // Optional: for development with self-signed certs or specific testing environments
-    // tls: {
-    //   rejectUnauthorized: false, // Set to true in production for security
-    // },
   });
 
-  // Define email options
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || "No-reply <no-reply@example.com>",
-    to: options.to,
-    subject: options.subject,
-    html: options.html,
-    replyTo: options.replyTo, // If the user provided their email in the contact form
+  // Define the email message
+  const message = {
+    from: `${process.env.FROM_NAME} <${process.env.FROM_EMAIL}>`, // Sender address
+    to: options.to, // List of recipients
+    subject: options.subject, // Subject line
+    html: options.html, // HTML body content
+    replyTo: options.replyTo, // Reply-to address
   };
 
   // Send the email
   try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`Message sent: ${info.messageId}`);
-    // console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info)); // Only for Ethereal email
-  } catch (error: any) {
-    console.error("Error sending email:", error);
-    // In a production environment, you might log this error to a monitoring service
-    throw new Error(`Failed to send email: ${error.message}`);
+    const info = await transporter.sendMail(message);
+    console.log("Email sent successfully: %s", info.messageId);
+    return info;
+  } catch (error) {
+    console.error("Failed to send email:", error);
+    throw new Error("Failed to send email.");
   }
 };
 

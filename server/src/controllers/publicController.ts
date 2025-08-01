@@ -1,9 +1,8 @@
 // server/src/controllers/publicController.ts
 import { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
-import Store from "../models/Store"; // Assuming you might want to save submitted stores to a 'pending' state or similar
-import Product from "../models/Product"; // Re-import Product model
-import sendEmail from "../utils/sendEmail"; // We'll create this utility
+import Product from "../models/Product";
+import sendEmail from "../utils/sendEmail";
 
 // @desc    Submit a new store suggestion
 // @route   POST /api/public/submit-store
@@ -17,27 +16,31 @@ const submitStore = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // OPTION 1: Just send an email notification to the admin
-  const adminEmail =
-    process.env.ADMIN_EMAIL || "discountcenterstores@gmail.com"; // Set this in your .env
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    throw new Error("Admin email is not configured.");
+  }
+
   const emailSubject = `New Store Suggestion: ${name}`;
   const emailMessage = `
-    A new store has been suggested:
-    Name: ${name}
-    URL: ${mainUrl}
-    Description: ${description || "N/A"}
-    Suggested by: ${contactName || "Anonymous"}
-    Contact Email: ${contactEmail || "N/A"}
+    <h1>A new store has been suggested:</h1>
+    <p><strong>Name:</strong> ${name}</p>
+    <p><strong>URL:</strong> <a href="${mainUrl}">${mainUrl}</a></p>
+    <p><strong>Description:</strong> ${description || "N/A"}</p>
+    <p><strong>Suggested by:</strong> ${contactName || "Anonymous"}</p>
+    <p><strong>Contact Email:</strong> ${contactEmail || "N/A"}</p>
   `;
 
   try {
     await sendEmail({
       to: adminEmail,
       subject: emailSubject,
-      html: emailMessage, // Or use a proper HTML template
+      html: emailMessage,
     });
-    res
-      .status(200)
-      .json({ success: true, message: "Store suggestion received." });
+    res.status(200).json({
+      success: true,
+      message: "Store suggestion received. An admin has been notified.",
+    });
   } catch (error: any) {
     console.error("Error sending store suggestion email:", error);
     res.status(500);
@@ -73,23 +76,27 @@ const contactUs = asyncHandler(async (req: Request, res: Response) => {
     throw new Error("Please fill in all fields.");
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL || "your_admin_email@example.com"; // Set this in your .env
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    throw new Error("Admin email is not configured.");
+  }
+
   const emailSubject = `Contact Form Inquiry: ${subject} from ${name}`;
   const emailMessage = `
-    You have a new message from the contact form:
-    Name: ${name}
-    Email: ${email}
-    Subject: ${subject}
-    Message:
-    ${message}
+    <h1>You have a new message from the contact form:</h1>
+    <p><strong>Name:</strong> ${name}</p>
+    <p><strong>Email:</strong> ${email}</p>
+    <p><strong>Subject:</strong> ${subject}</p>
+    <p><strong>Message:</strong></p>
+    <pre>${message}</pre>
   `;
 
   try {
     await sendEmail({
       to: adminEmail,
       subject: emailSubject,
-      html: emailMessage, // Or use a proper HTML template
-      replyTo: email, // Set reply-to to the user's email
+      html: emailMessage,
+      replyTo: email,
     });
     res.status(200).json({
       success: true,
@@ -113,7 +120,7 @@ const getAllPublicProducts = asyncHandler(
       .select(
         "name slug images description price oldPrice discountPercentage store category brand isFeatured isBestSeller todayUses"
       )
-      .populate("store", "name slug logo"); // Populate store details if needed for product pages
+      .populate("store", "name slug logo");
 
     res.status(200).json({
       success: true,
@@ -123,4 +130,4 @@ const getAllPublicProducts = asyncHandler(
   }
 );
 
-export { submitStore, contactUs, getAllPublicProducts }; // <-- Export the new function
+export { submitStore, contactUs, getAllPublicProducts };

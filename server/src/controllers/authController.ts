@@ -1,3 +1,4 @@
+// server/src/controllers/authController.ts
 import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
 import AdminUser from "../models/AdminUser";
@@ -5,17 +6,6 @@ import ErrorResponse from "../utils/errorResponse";
 import sendEmail from "../utils/sendEmail";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-
-dotenv.config();
-
-const JWT_SECRET_FROM_ENV = process.env.JWT_SECRET;
-if (!JWT_SECRET_FROM_ENV) {
-  throw new Error(
-    "FATAL ERROR: JWT_SECRET is not defined in environment variables. Please set it."
-  );
-}
-const JWT_SECRET: string = JWT_SECRET_FROM_ENV;
 
 // @ts-ignore: Temporarily ignore type error for JWT_EXPIRE_DURATION type
 const JWT_EXPIRE_DURATION: jwt.SignOptions["expiresIn"] =
@@ -42,7 +32,7 @@ const login = asyncHandler(
       return next(new ErrorResponse("Invalid credentials", 401));
     }
 
-    const isMatch = await adminUser.comparePassword(password);
+    const isMatch = await adminUser.comparePassword(password as string);
 
     if (!isMatch) {
       console.log(
@@ -51,14 +41,7 @@ const login = asyncHandler(
       return next(new ErrorResponse("Invalid credentials", 401));
     }
 
-    // @ts-ignore: Temporarily ignore type error for expiresIn
-    const token = jwt.sign(
-      { id: adminUser._id, role: adminUser.role },
-      JWT_SECRET,
-      {
-        expiresIn: JWT_EXPIRE_DURATION,
-      }
-    );
+    const token = adminUser.getSignedJwtToken();
 
     console.log(`Login successful for username: ${username}`);
     res.status(200).json({
@@ -79,58 +62,46 @@ const forgotPassword = asyncHandler(
 
     const adminUser = await AdminUser.findOne({ email });
 
-    if (!adminUser) {
-      console.log(
-        `Forgot password attempt for email '${email}': Admin user not found.`
-      );
-      return next(
-        new ErrorResponse("There is no admin user with that email", 404)
-      );
-    }
-
-    if (!adminUser.email) {
-      console.log(
-        `Forgot password attempt for username '${adminUser.username}': Admin user found but has no email configured for password reset.`
-      );
-      return next(
-        new ErrorResponse(
-          "Admin user has no email configured for password reset.",
-          400
-        )
-      );
-    }
-
-    const resetToken = adminUser.getResetPasswordToken();
-    await adminUser.save({ validateBeforeSave: false });
-
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-
-    const message = `
-    <h1>You have requested a password reset for your Admin account</h1>
-    <p>Please go to this link to reset your password:</p>
-    <a href="${resetUrl}" clicktracking="off">${resetUrl}</a>
-    <p>This link will expire in 10 minutes.</p>
-    <p>If you did not request this, please ignore this email.</p>
-  `;
-
-    try {
-      await sendEmail({
-        to: adminUser.email,
-        subject: "Admin Password Reset Token",
-        html: message,
-      });
-
-      console.log(`Admin password reset email sent to: ${adminUser.email}`);
-      res
-        .status(200)
-        .json({ success: true, data: "Admin password reset email sent" });
-    } catch (err: any) {
-      console.error("Error sending admin password reset email:", err);
-      adminUser.resetPasswordToken = undefined;
-      adminUser.resetPasswordExpire = undefined;
+    if (adminUser && adminUser.email) {
+      const resetToken = adminUser.getResetPasswordToken();
       await adminUser.save({ validateBeforeSave: false });
-      return next(new ErrorResponse("Email could not be sent", 500));
+
+      // The frontend URL where the user will land to reset their password
+      const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+      const message = `
+        <h1>You have requested a password reset for your Admin account</h1>
+        <p>Please go to this link to reset your password:</p>
+        <a href="${resetUrl}" clicktracking="off">${resetUrl}</a>
+        <p>This link will expire in 10 minutes.</p>
+        <p>If you did not request this, please ignore this email.</p>
+      `;
+
+      try {
+        await sendEmail({
+          // CORRECTED: Use 'to' instead of 'email'
+          to: adminUser.email,
+          subject: "Admin Password Reset Token",
+          // CORRECTED: Use 'html' instead of 'message'
+          html: message,
+        });
+
+        console.log(`Admin password reset email sent to: ${adminUser.email}`);
+      } catch (err: any) {
+        console.error("Error sending admin password reset email:", err);
+        adminUser.resetPasswordToken = undefined;
+        adminUser.resetPasswordExpire = undefined;
+        await adminUser.save({ validateBeforeSave: false });
+      }
     }
+
+    // Always return a success message to prevent user enumeration,
+    // regardless of whether the user was found or the email was sent.
+    res.status(200).json({
+      success: true,
+      message:
+        "If a user with that email exists, a password reset link has been sent.",
+    });
   }
 );
 
@@ -164,12 +135,17 @@ const resetPassword = asyncHandler(
     adminUser.resetPasswordExpire = undefined;
     await adminUser.save();
 
+    // Generate a new token and log the user in automatically
+    const token = adminUser.getSignedJwtToken();
+
     console.log(
       `Admin password for user '${adminUser.username}' reset successfully.`
     );
-    res
-      .status(200)
-      .json({ success: true, data: "Admin password reset successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Admin password reset successfully",
+      token,
+    });
   }
 );
 
