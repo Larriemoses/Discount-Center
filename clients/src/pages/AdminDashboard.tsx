@@ -58,19 +58,6 @@ const AdminDashboard: React.FC = () => {
               Go to Products
             </Link>
           </div>
-          <div className="bg-purple-50 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center">
-            <h3 className="text-xl font-semibold mb-2">View Analytics</h3>
-            <p className="text-gray-600 text-center text-sm">
-              Access performance data and reports.
-            </p>
-            {/* You can add a Link for Analytics later */}
-            <Link
-              to="/admin/analytics" // Or wherever you want the route to be
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg text-center transition duration-300 transform hover:scale-105"
-            >
-              View Analytics & Reports
-            </Link>
-          </div>
         </div>
 
         <div className="mt-10 text-center">
