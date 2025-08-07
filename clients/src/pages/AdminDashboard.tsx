@@ -30,7 +30,10 @@ const AdminDashboard: React.FC = () => {
           administrative tasks.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Updated the grid layout to only have 2 columns for medium and large screens,
+          since the analytics card has been removed. This centers the two remaining cards.
+        */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Example Admin Actions/Cards */}
           <div className="bg-blue-50 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center">
             <h3 className="text-xl font-semibold mb-2">Manage Stores</h3>
