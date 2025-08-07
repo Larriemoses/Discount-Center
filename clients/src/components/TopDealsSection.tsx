@@ -130,16 +130,9 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
   };
 
   const handleCopyCode = (dealId: string, code: string) => {
-    navigator.clipboard
-      .writeText(code)
-      .then(() => {
-        handleInteraction(dealId, "copy");
-        showNotification(`Code "${code}" copied!`);
-      })
-      .catch((err) => {
-        console.error("Clipboard copy failed:", err);
-        showNotification("Failed to copy code. Please try manually.", "error");
-      });
+    document.execCommand("copy", false, code);
+    handleInteraction(dealId, "copy");
+    showNotification(`Code "${code}" copied!`);
   };
 
   const handleShopNow = (dealId: string, shopNowLink: string) => {
@@ -152,30 +145,7 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
   const STATIC_FILES_BASE_URL = `${backendRoot}/uploads`;
   const PLACEHOLDER_LOGO_PATH = "/placeholder-logo.png";
 
-  // Framer Motion Variants - Corrected `ease` and `type` properties
-  const sectionVariants = {
-    hidden: { opacity: 0, y: 50 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.8,
-        ease: "easeOut" as const, // Use 'as const' for literal type inference
-      },
-    },
-  };
-
   const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        type: "spring" as const, // Use 'as const' for literal type inference
-        stiffness: 100,
-        damping: 10,
-      } as Transition, // Explicitly cast the transition object
-    },
     hover: { scale: 1.02, boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.15)" },
     tap: { scale: 0.98 },
   };
@@ -221,14 +191,10 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
   }
 
   return (
-    <motion.section
+    <section
       className={`${
         className || ""
       } pb-12 relative bg-white container mx-auto px-4 sm:px-6 lg:px-8`}
-      variants={sectionVariants}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, amount: 0.2 }}
     >
       <h2 className="text-3xl md:text-4xl font-extrabold text-center text-gray-800 mb-10">
         Top Deals
@@ -249,8 +215,7 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
       )}
 
       <div className="flex flex-col items-center gap-8">
-        {topDeals.map((product, index) => {
-          // Type guard for product.store
+        {topDeals.map((product) => {
           const store =
             typeof product.store === "object" && product.store !== null
               ? product.store
@@ -266,12 +231,8 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
               key={product._id}
               className="bg-white p-6 rounded-lg shadow-md border border-gray-200 flex flex-col w-full max-w-sm"
               variants={cardVariants}
-              initial="hidden"
-              whileInView="visible"
               whileHover="hover"
               whileTap="tap"
-              viewport={{ once: true, amount: 0.1 }} // Animate each card as it comes into view
-              transition={{ delay: index * 0.05 }} // Stagger cards slightly
             >
               <div className="flex flex-col items-start mb-4">
                 {store?.logo && store.logo !== "no-photo.jpg" ? (
@@ -333,42 +294,6 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
                 </motion.button>
               </div>
 
-              {/* Like/Dislike Buttons
-              <div className="flex justify-center items-center gap-4 mt-2 mb-4">
-                <motion.button
-                  onClick={() => handleLike(product._id)}
-                  className="flex items-center text-green-600 hover:text-green-800 transition duration-200"
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                >
-                  <svg
-                    className="w-5 h-5 mr-1"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                  </svg>
-                  {product.likes || 0}
-                </motion.button>
-                <motion.button
-                  onClick={() => handleDislike(product._id)}
-                  className="flex items-center text-red-600 hover:text-red-800 transition duration-200"
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                >
-                  <svg
-                    className="w-5 h-5 mr-1 transform rotate-180" // Rotate for a dislike icon
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                  </svg>
-                  {product.dislikes || 0}
-                </motion.button> */}
-              {/* </div> */}
-
               <div className="flex items-center justify-end text-gray-600 text-sm mt-auto">
                 <div className="flex items-center space-x-2 text-gray-600">
                   <span className="font-semibold text-green-700">
@@ -385,7 +310,7 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
           );
         })}
       </div>
-    </motion.section>
+    </section>
   );
 };
 
