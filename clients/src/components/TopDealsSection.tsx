@@ -253,19 +253,19 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
                   </div>
                 )}
                 {store?.topDealHeadline && (
-                  <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">
+                  <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full ">
                     {store.topDealHeadline}
                   </span>
                 )}
               </div>
 
-              <h3 className="text-lg font-bold text-gray-900 mb-4 leading-snug flex-grow">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 leading-snug flex-grow text-left">
                 {product.name}
               </h3>
 
               <div className="flex flex-col space-y-2 mb-4">
                 <div className="flex w-full items-stretch">
-                  <span className="flex-1 bg-[#6348db] text-[#f3f0fa] font-semibold rounded-l-md py-2 px-4 text-center truncate">
+                  <span className="flex-1 bg-[#6348db] text-[#f3f0fa] font-semibold rounded-l-md py-2 px-4 truncate">
                     {product.discountCode}
                   </span>
                   <motion.button
@@ -292,7 +292,7 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
                 </motion.button>
               </div>
 
-              <div className="flex items-center justify-end text-gray-600 text-sm mt-auto">
+              <div className="flex items-center justify-start text-gray-600 text-sm mt-auto">
                 <div className="flex items-center space-x-2 text-gray-600">
                   <span className="font-semibold text-green-700">
                     {product.successRate || 100}% SUCCESS

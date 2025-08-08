@@ -282,7 +282,7 @@ const StoreDetailsPage: React.FC = () => {
                       </div>
                     )}
                     {/* Product Name - Responsive text, line clamp, and word breaking */}
-                    <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 break-words">
+                    <h3 className="text-lg font-semibold text-gray-800 text-left">
                       {product.name}
                     </h3>
                   </div>
