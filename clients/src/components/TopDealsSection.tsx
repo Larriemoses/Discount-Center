@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import type { Transition } from "framer-motion"; // Import Transition type
+// import type { Transition } from "framer-motion"; // Import Transition type
 import type { IProductApi } from "@common/types/IProductTypes";
 // import type { IStoreApi } from "@common/types/IStoreTypes";
 import axiosInstance from "../utils/axiosInstance";
