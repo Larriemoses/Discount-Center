@@ -56,8 +56,7 @@ const getTodayMidnight = () => {
 
 // Function to apply the daily reset logic to a product
 const applyDailyReset = async (product: IProductDocument) => {
-  const today = getTodayMidnight();
-  // Check if reset is needed
+  const today = getTodayMidnight(); // Check if reset is needed
   if (
     !product.lastDailyReset ||
     product.lastDailyReset.toDateString() !== today.toDateString()
@@ -85,9 +84,9 @@ const applyDailyReset = async (product: IProductDocument) => {
   }
 };
 
-// @desc    Get all products (for Admin List Page)
-// @route   GET /api/products
-// @access  Public / Admin
+// @desc    Get all products (for Admin List Page)
+// @route   GET /api/products
+// @access  Public / Admin
 export const getProducts = asyncHandler(async (req: Request, res: Response) => {
   const products = await Product.find({}).populate("store", "name logo");
 
@@ -104,9 +103,9 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
-// @desc    Get all products for a specific store
-// @route   GET /api/products/stores/:storeId/products
-// @access  Public
+// @desc    Get all products for a specific store
+// @route   GET /api/products/stores/:storeId/products
+// @access  Public
 export const getProductsByStore = asyncHandler(
   async (req: Request<{ storeId: string }>, res: Response) => {
     const { storeId } = req.params;
@@ -130,9 +129,9 @@ export const getProductsByStore = asyncHandler(
   }
 );
 
-// @desc    Get a single product by its ID
-// @route   GET /api/products/:id
-// @access  Public
+// @desc    Get a single product by its ID
+// @route   GET /api/products/:id
+// @access  Public
 export const getProductById = asyncHandler(
   async (req: Request, res: Response) => {
     const product = (await Product.findById(req.params.id).populate(
@@ -145,15 +144,15 @@ export const getProductById = asyncHandler(
       throw new Error("Product not found");
     }
 
-    await applyDailyReset(product);
+    await applyDailyReset(product); // FIX: Wrap the product in a 'data' object to match the frontend's expected structure
 
-    res.status(200).json(product);
+    res.status(200).json({ success: true, data: product });
   }
 );
 
-// @desc    Create new product for a store
-// @route   POST /api/stores/:storeId/products
-// @access  Private (Admin)
+// @desc    Create new product for a store
+// @route   POST /api/stores/:storeId/products
+// @access  Private (Admin)
 export const createProduct = asyncHandler(
   async (req: Request<{ storeId: string }>, res: Response) => {
     const { storeId } = req.params;
@@ -182,8 +181,7 @@ export const createProduct = asyncHandler(
       throw new Error("Store not found.");
     }
 
-    let productImages: string[] = [];
-    // Cast req.files to Express.Multer.File[] to satisfy TypeScript
+    let productImages: string[] = []; // Cast req.files to Express.Multer.File[] to satisfy TypeScript
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       productImages = (req.files as Express.Multer.File[]).map(
         // <-- FIX HERE
@@ -215,9 +213,9 @@ export const createProduct = asyncHandler(
   }
 );
 
-// @desc    Update a product
-// @route   PUT /api/products/:id
-// @access  Private (Admin)
+// @desc    Update a product
+// @route   PUT /api/products/:id
+// @access  Private (Admin)
 export const updateProduct = asyncHandler(
   async (req: Request, res: Response) => {
     const {
@@ -249,9 +247,8 @@ export const updateProduct = asyncHandler(
     }
 
     const oldImages = product.images ? [...product.images] : [];
-    let newImages: string[] | undefined;
+    let newImages: string[] | undefined; // Cast req.files to Express.Multer.File[] to satisfy TypeScript
 
-    // Cast req.files to Express.Multer.File[] to satisfy TypeScript
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       newImages = (req.files as Express.Multer.File[]).map(
         // <-- FIX HERE
@@ -337,9 +334,9 @@ export const updateProduct = asyncHandler(
   }
 );
 
-// @desc    Delete a product
-// @route   DELETE /api/products/:id
-// @access  Private (Admin)
+// @desc    Delete a product
+// @route   DELETE /api/products/:id
+// @access  Private (Admin)
 export const deleteProduct = asyncHandler(
   async (req: Request, res: Response) => {
     const productId = req.params.id;
@@ -361,9 +358,9 @@ export const deleteProduct = asyncHandler(
   }
 );
 
-// @desc    Handle product interaction (copy, shop, like, dislike)
-// @route   POST /api/products/:id/interact
-// @access  Public
+// @desc    Handle product interaction (copy, shop, like, dislike)
+// @route   POST /api/products/:id/interact
+// @access  Public
 export const interactProduct = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -413,9 +410,8 @@ export const interactProduct = asyncHandler(
       );
     } else {
       product.successRate = 100;
-    }
+    } // Save the updated product
 
-    // Save the updated product
     await product.save();
 
     console.log(
@@ -430,9 +426,9 @@ export const interactProduct = asyncHandler(
   }
 );
 
-// @desc    Get top deals controller
-// @route   GET /api/products/top-deals
-// @access  Public
+// @desc    Get top deals controller
+// @route   GET /api/products/top-deals
+// @access  Public
 export const getTopDeals = asyncHandler(async (req: Request, res: Response) => {
   try {
     const topDeals = await Product.find({ isActive: true })
@@ -463,9 +459,9 @@ export const getTopDeals = asyncHandler(async (req: Request, res: Response) => {
 
 // --- NEW ANALYTICS ENDPOINTS BELOW ---
 
-// @desc    Get top performing products by total uses
-// @route   GET /api/products/analytics/top-by-uses
-// @access  Private (Admin)
+// @desc    Get top performing products by total uses
+// @route   GET /api/products/analytics/top-by-uses
+// @access  Private (Admin)
 export const getTopProductsByUses = asyncHandler(
   async (req: Request, res: Response) => {
     // Apply daily reset to all products before fetching to ensure data is fresh
@@ -487,9 +483,9 @@ export const getTopProductsByUses = asyncHandler(
   }
 );
 
-// @desc    Get top performing products by success rate
-// @route   GET /api/products/analytics/top-by-success-rate
-// @access  Private (Admin)
+// @desc    Get top performing products by success rate
+// @route   GET /api/products/analytics/top-by-success-rate
+// @access  Private (Admin)
 export const getTopProductsBySuccessRate = asyncHandler(
   async (req: Request, res: Response) => {
     // Apply daily reset to all products before fetching
@@ -514,9 +510,9 @@ export const getTopProductsBySuccessRate = asyncHandler(
   }
 );
 
-// @desc    Get products with lowest stock
-// @route   GET /api/products/analytics/low-stock
-// @access  Private (Admin)
+// @desc    Get products with lowest stock
+// @route   GET /api/products/analytics/low-stock
+// @access  Private (Admin)
 export const getLowStockProducts = asyncHandler(
   async (req: Request, res: Response) => {
     const lowStockThreshold = parseInt(req.query.threshold as string) || 10; // Default threshold to 10
@@ -532,14 +528,12 @@ export const getLowStockProducts = asyncHandler(
   }
 );
 
-// @desc    Get daily usage summary
-// @route   GET /api/products/analytics/daily-summary
-// @access  Private (Admin)
+// @desc    Get daily usage summary
+// @route   GET /api/products/analytics/daily-summary
+// @access  Private (Admin)
 export const getDailyUsageSummary = asyncHandler(
   async (req: Request, res: Response) => {
-    const today = getTodayMidnight();
-    // Re-apply daily reset to all products that haven't been reset today
-    // This is crucial to ensure 'todayUses' is accurate for the current day across all products.
+    const today = getTodayMidnight(); // Re-apply daily reset to all products that haven't been reset today // This is crucial to ensure 'todayUses' is accurate for the current day across all products.
     const productsToReset = await Product.find({
       $or: [
         { lastDailyReset: { $lt: today } },
@@ -569,9 +563,9 @@ export const getDailyUsageSummary = asyncHandler(
   }
 );
 
-// @desc    Get overall product stats
-// @route   GET /api/products/analytics/overall-stats
-// @access  Private (Admin)
+// @desc    Get overall product stats
+// @route   GET /api/products/analytics/overall-stats
+// @access  Private (Admin)
 export const getOverallProductStats = asyncHandler(
   async (req: Request, res: Response) => {
     const totalProducts = await Product.countDocuments();

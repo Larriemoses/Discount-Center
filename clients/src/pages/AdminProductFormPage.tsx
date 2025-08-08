@@ -1,15 +1,16 @@
 // src/pages/AdminProductFormPage.tsx
 
-import { useState, useEffect } from "react"; // Removed React
+import { useState, useEffect } from "react";
 import axiosInstance from "../utils/axiosInstance";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import type { IProductApi } from "@common/types/IProductTypes"; // <--- Use IProductApi and added 'type'
-import type { IStoreApi } from "@common/types/IStoreTypes"; // <--- Use IStoreApi and added 'type'
+import type { IProductApi } from "@common/types/IProductTypes";
+import type { IStoreApi } from "@common/types/IStoreTypes";
+import { motion } from "framer-motion";
 
 // Define interfaces for API responses (matching backend structure)
 interface SingleProductApiResponse {
   success: boolean;
-  data: IProductApi; // The actual product object
+  data: IProductApi;
 }
 
 interface StoresApiResponse {
@@ -30,15 +31,39 @@ const AdminProductFormPage: React.FC = () => {
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
   const [selectedStore, setSelectedStore] = useState("");
 
-  const [stores, setStores] = useState<IStoreApi[]>([]); // Use IStoreApi for state
+  const [stores, setStores] = useState<IStoreApi[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitLoading, setSubmitLoading] = useState(false);
 
+  // New state for notifications
+  const [notificationMessage, setNotificationMessage] = useState<string | null>(
+    null
+  );
+  const [notificationType, setNotificationType] = useState<
+    "success" | "error" | null
+  >(null);
+
   const backendRootUrl = import.meta.env.VITE_BACKEND_URL.replace("/api", "");
+
+  const showNotification = (
+    message: string,
+    type: "success" | "error" = "success"
+  ) => {
+    setNotificationMessage(message);
+    setNotificationType(type);
+    setTimeout(() => {
+      setNotificationMessage(null);
+      setNotificationType(null);
+    }, 3000);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!adminToken) {
+        navigate("/admin/login");
+        return;
+      }
       setLoading(true);
       setError("");
       try {
@@ -48,17 +73,22 @@ const AdminProductFormPage: React.FC = () => {
             headers: { Authorization: `Bearer ${adminToken}` },
           }
         );
-        setStores(storesResponse.data.data || storesResponse.data);
+        setStores(storesResponse.data.data || []);
 
         if (id) {
           const productResponse =
-            await axiosInstance.get<SingleProductApiResponse>( // Use explicit API response type
+            await axiosInstance.get<SingleProductApiResponse>(
               `/products/${id}`,
               {
                 headers: { Authorization: `Bearer ${adminToken}` },
               }
             );
-          const product: IProductApi = productResponse.data.data; // Ensure this matches your API structure
+
+          // Bug fix: Add a check to ensure product data exists before setting state
+          const product = productResponse.data?.data;
+          if (!product) {
+            throw new Error("Product data not found in the response.");
+          }
 
           setName(product.name);
           setDiscountCode(product.discountCode);
@@ -66,16 +96,11 @@ const AdminProductFormPage: React.FC = () => {
           setExistingImageUrls(product.images || []);
 
           if (product.store) {
-            // Refined type guard and explicit cast to IStoreApi
-            if (
-              typeof product.store === "object" &&
-              product.store !== null &&
-              (product.store as IStoreApi)._id
-            ) {
-              setSelectedStore(String((product.store as IStoreApi)._id)); // Access _id safely
-            } else {
-              setSelectedStore(String(product.store)); // It's the ID string
-            }
+            const storeId =
+              typeof product.store === "object"
+                ? product.store._id
+                : product.store;
+            setSelectedStore(String(storeId));
           } else {
             setSelectedStore("");
           }
@@ -83,7 +108,7 @@ const AdminProductFormPage: React.FC = () => {
       } catch (err: any) {
         console.error("Failed to fetch data:", err);
         setError(
-          "Failed to load data: " + (err.response?.data?.message || err.message)
+          "Failed to load data. Please ensure the server is running and you are logged in."
         );
         if (err.response?.status === 401 || err.response?.status === 403) {
           navigate("/admin/login");
@@ -128,7 +153,7 @@ const AdminProductFormPage: React.FC = () => {
             "Content-Type": "multipart/form-data",
           },
         });
-        alert("Product updated successfully!");
+        showNotification("Product updated successfully!");
       } else {
         response = await axiosInstance.post(
           `/products/stores/${selectedStore}/products`,
@@ -140,7 +165,7 @@ const AdminProductFormPage: React.FC = () => {
             },
           }
         );
-        alert("Product added successfully!");
+        showNotification("Product added successfully!");
       }
       console.log("Submission successful:", response.data);
       navigate("/admin/products");
@@ -152,6 +177,10 @@ const AdminProductFormPage: React.FC = () => {
             err.response?.data?.message ||
             err.message)
       );
+      showNotification(
+        "Submission failed: " + (err.response?.data?.message || err.message),
+        "error"
+      );
       if (err.response?.status === 401 || err.response?.status === 403) {
         navigate("/admin/login");
       }
@@ -160,19 +189,33 @@ const AdminProductFormPage: React.FC = () => {
     }
   };
 
+  // Improved conditional rendering to show error if fetch fails
   if (loading) return <div className="text-center p-8">Loading form...</div>;
-  if (error && !submitLoading && !id)
-    return <div className="text-center p-8 text-red-600">{error}</div>;
+  if (error)
+    return (
+      <div className="text-center p-8 text-red-600 font-bold">{error}</div>
+    );
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
+      {notificationMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -50 }}
+          className={`fixed top-2 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium text-lg transition-all duration-300 ease-in-out transform ${
+            notificationType === "success" ? "bg-green-500" : "bg-red-500"
+          }`}
+          role="alert"
+        >
+          {notificationMessage}
+        </motion.div>
+      )}
       <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
         <h1 className="text-3xl font-bold text-gray-800 mb-6">
           {id ? "Edit Product" : "Add New Product"}
         </h1>
-        {error && submitLoading && (
-          <div className="text-red-600 mb-4">{error}</div>
-        )}
+        {error && <div className="text-red-600 mb-4">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!id && (
@@ -193,8 +236,6 @@ const AdminProductFormPage: React.FC = () => {
                 <option value="">-- Select a Store --</option>
                 {stores.map((store) => (
                   <option key={store._id} value={store._id}>
-                    {" "}
-                    {/* _id is directly available on IStoreApi */}
                     {store.name}
                   </option>
                 ))}

@@ -3,9 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-// import type { Transition } from "framer-motion"; // Import Transition type
 import type { IProductApi } from "@common/types/IProductTypes";
-// import type { IStoreApi } from "@common/types/IStoreTypes";
 import axiosInstance from "../utils/axiosInstance";
 
 // Define the structure of the data returned by the product interaction API
@@ -261,7 +259,7 @@ const TopDealsSection: React.FC<TopDealsSectionProps> = ({ className }) => {
                 )}
               </div>
 
-              <h3 className="text-lg font-bold text-gray-900 mb-4 leading-snug flex-grow truncate whitespace-nowrap overflow-hidden">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 leading-snug flex-grow">
                 {product.name}
               </h3>
 
