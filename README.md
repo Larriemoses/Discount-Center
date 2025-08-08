@@ -56,6 +56,19 @@ Built with **affiliate marketing** in mind, this project blends **modern front-e
 
 Follow these steps to run the project locally:
 
+---
+
+## 🏪 Why Choose Discount Center
+* Curated for You – Handpicked genuine deals & discounts.
+* Best Deals, Real Savings – Constantly updated for maximum savings.
+* Verified & Valid Codes – No expired codes.
+* Easy Access – Find the perfect deal quickly.
+* Trusted Brands – Partnerships with reputable companies.
+* Wide Range of Offers – From tech accessories to more.
+--
+**Stay Updated – New deals added regularly.**
+
+
 ```bash
 # Clone the repository
 git clone https://github.com/larriemoses/discount-center.git
@@ -70,28 +83,10 @@ npm install
 npm run dev
 
 # Open in browser
-http://localhost:3000
+http://localhost:3000 
 
 
-🏪 Why Choose Discount Center
-Curated for You – Handpicked genuine deals & discounts.
-
-Best Deals, Real Savings – Constantly updated for maximum savings.
-
-Verified & Valid Codes – No expired codes.
-
-Easy Access – Find the perfect deal quickly.
-
-Trusted Brands – Partnerships with reputable companies.
-
-Wide Range of Offers – From tech accessories to more.
-
-Stay Updated – New deals added regularly.
-
-markdown
-Copy
-Edit
-📜 License
+# 📜 License
 © 2025 Discount Center. All rights reserved.
 
 📬 Connect With me - +2348073210004 | larriemoses@gmail.com
