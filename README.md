@@ -25,23 +25,6 @@ Built with **affiliate marketing** in mind, this project blends **modern front-e
 * **📱 Fully Responsive** – Works perfectly on **mobile, tablet, and desktop**.
 * **💰 Affiliate-Ready** – Easily integrates with affiliate programs and tracking links.
 * **⚡ Fast Loading** – Uses **Next.js static generation** & **incremental builds** for speed.
-
----
-
-## 💻 Tech Stack & Tools
-
-| Category             | Technology / Tool | Purpose                                      |
-| -------------------- | ----------------- | -------------------------------------------- |
-| **Framework**        | Next.js           | React framework with SSR & static generation |
-| **Language**         | TypeScript        | Type-safe, maintainable code                 |
-| **Styling**          | Tailwind CSS      | Utility-first responsive CSS                 |
-| **Icons**            | Lucide Icons      | Clean, customizable icon system              |
-| **Deployment**       | Namecheap         | Hosting & deployment                         |
-| **State Management** | React Hooks       | Manage component state & side effects        |
-| **API Calls**        | fetch API         | Data fetching from APIs                      |
-| **Version Control**  | Git               | Source code tracking                         |
-| **Dependency Mgmt**  | npm               | Install & manage dependencies                |
-
 ---
 ## 🛠️ Technologies Used
 
